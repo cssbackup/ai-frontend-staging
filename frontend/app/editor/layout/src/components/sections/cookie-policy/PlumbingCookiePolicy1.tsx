@@ -1,0 +1,14 @@
+// @ts-nocheck
+"use client";
+
+import type { SectionProps } from "../../../types/section";
+import { site } from "../data/plumbing1";
+import PlumbingLegalLayout from "../legal/PlumbingLegalLayout";
+
+export default function PlumbingCookiePolicy1({ data }: SectionProps) {
+  return (
+    <PlumbingLegalLayout
+      legalData={(data as typeof site.legal.cookie | undefined) ?? site.legal.cookie}
+    />
+  );
+}
