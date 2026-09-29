@@ -4,7 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev --port 3003",
+    "prebuild": "node scripts/generate-prisma-client.mjs",
     "build": "next build",
+    "postinstall": "node scripts/generate-prisma-client.mjs",
     "start": "next start --port 3003",
     "lint": "eslint"
   },
@@ -13,6 +15,7 @@
     "@babel/generator": "^8.0.0",
     "@babel/parser": "^8.0.0",
     "@babel/traverse": "^8.0.0",
+    "@prisma/client": "^6.10.1",
     "framer-motion": "^11.18.2",
     "fs-extra": "^11.3.5",
     "gsap": "^3.15.0",
@@ -21,6 +24,7 @@
     "lucide-react": "^1.21.0",
     "next": "16.2.11",
     "playwright": "^1.62.1",
+    "prisma": "^6.10.1",
     "radix-ui": "^1.6.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",

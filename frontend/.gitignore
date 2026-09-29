@@ -39,6 +39,9 @@ yarn-error.log*
 # local runtime data (Magnific quota counters, etc.)
 .data/
 
+# copied from backend/prisma/schema.prisma during install/build
+/prisma/schema.prisma
+
 # vercel
 .vercel
 

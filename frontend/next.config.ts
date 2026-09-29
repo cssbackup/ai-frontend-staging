@@ -2,10 +2,10 @@ import type { NextConfig } from "next";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const monorepoRoot = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  "../..",
-);
+const appDir = path.dirname(fileURLToPath(import.meta.url));
+// Git root (the parent of `frontend`). On Vercel this is /vercel/path0.
+// turbopack.root and outputFileTracingRoot must be the same directory.
+const monorepoRoot = path.resolve(appDir, "..");
 
 const nextConfig: NextConfig = {
   // Hide Next.js "N" badge while running next dev on EC2.
@@ -23,7 +23,8 @@ const nextConfig: NextConfig = {
     "http://13.201.222.98",
     "http://13.201.222.90",
   ],
-  serverExternalPackages: ["playwright"],
+  outputFileTracingRoot: monorepoRoot,
+  serverExternalPackages: ["playwright", "@prisma/client", "prisma"],
   turbopack: {
     root: monorepoRoot,
   },
