@@ -16,9 +16,9 @@ import {
   LayoutTemplate,
   Plus,
   Settings,
+  Sparkle,
   Sparkles,
   Users,
-  Zap,
 } from "lucide-react";
 import Button from "../ui/Button";
 import type { getOnboardingDraftSummary } from "@/lib/onboardingDraft";
@@ -69,10 +69,9 @@ function MinutesSparkle({ className = "" }: { className?: string }) {
   );
 }
 
-const mobilePills = [
-  { icon: Zap, label: "No Coding Needed" },
-  { icon: LayoutTemplate, label: "Beautiful Templates" },
-  { icon: Users, label: "Human Support" },
+const desktopPills = [
+  { icon: Sparkle, label: "AI Powered", iconClassName: "fill-[#ffe14a] text-[#ffe14a]" },
+  { icon: Users, label: "Human Support", iconClassName: "text-white" },
 ] as const;
 
 const previewNav = [
@@ -243,7 +242,7 @@ export default function HeroSection({
               className="relative z-20 mx-auto w-full max-w-[1500px] shrink-0 text-center"
             >
               <div data-hero-text>
-                <h1 className="text-center text-[clamp(2.45rem,calc(0.55rem+11vw),4rem)] font-extrabold not-italic leading-[0.94] tracking-[-.045em] text-white max-[768px]:text-[clamp(2.45rem,calc(0.55rem+11vw),4rem)] sm:text-[clamp(2.7rem,calc(0.65rem+8.4vw),4.15rem)] md:text-[clamp(3.1rem,calc(0.85rem+6.2vw),4.35rem)] lg:text-[clamp(3.35rem,5vw,4.5rem)] xl:hidden">
+                <h1 className="text-center mt-2 text-[clamp(2.45rem,calc(0.55rem+11vw),4rem)] font-extrabold not-italic leading-[0.94] tracking-[-.045em] text-white max-[768px]:text-[clamp(2.45rem,calc(0.55rem+11vw),4rem)] min-[350px]:max-[561px]:!text-[clamp(2.9rem,calc(0.15rem+14.5vw),4.85rem)] sm:text-[clamp(2.7rem,calc(0.65rem+8.4vw),4.15rem)] md:text-[clamp(3.1rem,calc(0.85rem+6.2vw),4.35rem)] lg:text-[clamp(3.35rem,5vw,4.5rem)] xl:hidden">
                   <span className="block overflow-hidden">
                     <span data-hero-line className="block">
                       Build Your
@@ -310,13 +309,13 @@ export default function HeroSection({
 
 
 
-              <div className="mt-3 hidden flex-wrap items-center justify-center gap-2 sm:mt-4 sm:gap-2.5 xl:mt-5 xl:flex xl:gap-3">
-                {mobilePills.map(({ icon: Icon, label }) => (
+              <div className="mt-4 flex items-center justify-center gap-2.5 xl:mt-5">
+                {desktopPills.map(({ icon: Icon, label, iconClassName }) => (
                   <span
                     key={label}
-                    className="inline-flex items-center gap-1 rounded-full bg-white px-2 py-1.5 text-[10px] font-medium text-[#1e2a4a] shadow-[0_8px_22px_rgba(4,17,74,.16)] sm:gap-2 sm:px-4 sm:py-2 sm:text-[13px] xl:px-5 xl:text-sm"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-white/80 bg-white/10 px-3.5 py-1.5 text-[13px] font-medium leading-none text-white"
                   >
-                    <Icon size={15} className="text-[#3b6cf6]" aria-hidden />
+                    <Icon size={14} strokeWidth={2} className={iconClassName} aria-hidden />
                     {label}
                   </span>
                 ))}
@@ -324,36 +323,27 @@ export default function HeroSection({
             </div>
           </div>
 
-          <div className="relative z-50 mx-auto mt-auto w-full max-w-[720px] shrink-0 max-xl:!static max-xl:!top-10 max-xl:!translate-x-0 sm:max-w-[820px] md:max-w-[920px] xl:absolute xl:left-1/2 xl:top-[360px] xl:mt-0 xl:h-auto xl:max-h-none xl:w-[min(86vw,1480px)] xl:max-w-none xl:flex-none xl:shrink xl:-translate-x-1/2 xl:overflow-visible">
-            <div className="pointer-events-none absolute inset-x-0 -top-11 z-30 flex justify-center xl:hidden">
-              <div className="flex w-full max-w-full flex-nowrap items-center justify-center gap-1 px-1 sm:gap-2">
-                {mobilePills.map(({ icon: Icon, label }) => (
-                  <span
-                    key={label}
-                    className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-white px-[clamp(6px,1.8vw,14px)] py-[clamp(5px,1.2vw,8px)] text-[clamp(9px,2.7vw,15px)] font-medium text-[#1e2a4a] shadow-[0_8px_22px_rgba(4,17,74,.16)] sm:gap-1.5"
-                  >
-                    <Icon size={14} className="shrink-0 text-[#3b6cf6]" aria-hidden />
-                    {label}
-                  </span>
-                ))}
-              </div>
-            </div>
-
+          <div className="pointer-events-none relative z-50 mx-auto mt-auto w-full max-w-[720px] shrink-0 max-xl:!static max-xl:!top-10 max-xl:!translate-x-0 sm:max-w-[820px] md:max-w-[920px] xl:absolute xl:left-1/2 xl:top-[404px] xl:mt-0 xl:h-auto xl:max-h-none xl:w-[min(74vw,1180px)] xl:max-w-none xl:flex-none xl:shrink xl:-translate-x-1/2 xl:overflow-visible">
             <div
               data-hero-device
-              className="relative h-[clamp(190px,28dvh,300px)] origin-top overflow-hidden will-change-transform sm:h-[clamp(230px,38dvh,340px)] md:h-[clamp(250px,40dvh,360px)] xl:h-auto xl:overflow-visible xl:translate-y-[220px] xl:scale-[0.72]"
+              className="relative h-[clamp(240px,36dvh,360px)] origin-top overflow-hidden will-change-transform sm:h-[clamp(280px,46dvh,400px)] md:h-[clamp(300px,48dvh,420px)] xl:h-auto xl:overflow-visible xl:translate-y-[150px] xl:scale-[0.9]"
             >
 
 
               <div className="absolute -inset-3 hidden rounded-[42%] bg-cyan-100/20 blur-[22px] xl:-inset-16 xl:block xl:blur-[65px]" />
-              <div className="hidden xl:block absolute -inset-7 rounded-[2.6rem] border border-white/15" />
-              <div className="hidden xl:block absolute -inset-3 rounded-[2.25rem] border border-cyan-100/25" />
 
               <div className="relative h-full w-full overflow-hidden xl:hidden">
                 <MobileHeroPreview />
               </div>
 
-              <div className="relative hidden overflow-hidden rounded-[2rem] border border-white/60 bg-[#07111e] p-4 shadow-[0_55px_120px_rgba(5,24,111,.6),0_0_0_1px_rgba(255,255,255,.12)] xl:block">
+              <div
+                data-hero-dashboard
+                className="relative hidden xl:block"
+              >
+              <div className="absolute -inset-7 rounded-[2.6rem] border border-white/15" />
+              <div className="absolute -inset-3 rounded-[2.25rem] border border-cyan-100/25" />
+
+              <div className="relative overflow-hidden rounded-[2rem] border border-white/60 bg-[#07111e] p-4 shadow-[0_55px_120px_rgba(5,24,111,.6),0_0_0_1px_rgba(255,255,255,.12)]">
                 <div
                   data-dashboard-shine
                   className="pointer-events-none absolute -left-1/2 top-0 z-20 h-full w-1/3 -skew-x-12 bg-gradient-to-r from-transparent via-white/18 to-transparent"
@@ -387,6 +377,7 @@ export default function HeroSection({
                   />
                   <div className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-black/5" />
                 </div>
+              </div>
               </div>
 
               <div

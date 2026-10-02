@@ -1026,16 +1026,28 @@ export default function TeamManager({
                       <span className="text-sm font-semibold text-slate-700">
                         {item.order ?? "-"}
                       </span>
-                      <span
+                      <button
+                        type="button"
+                        onClick={() =>
+                          persist({
+                            ...pageState,
+                            teamMembers: pageState.teamMembers.map((row) =>
+                              row.id === item.id
+                                ? { ...row, active: !isActive }
+                                : row,
+                            ),
+                          })
+                        }
                         className={`inline-flex w-fit items-center gap-1 rounded-full px-2 py-1 text-[11px] font-bold ${
                           isActive
                             ? "bg-emerald-50 text-emerald-700"
                             : "bg-slate-100 text-slate-500"
                         }`}
+                        aria-label={`${isActive ? "Deactivate" : "Activate"} ${item.title}`}
                       >
                         {isActive ? <Eye size={12} /> : <EyeOff size={12} />}
                         {isActive ? "Active" : "Inactive"}
-                      </span>
+                      </button>
                       <div className="flex justify-end gap-1">
                         <button
                           type="button"

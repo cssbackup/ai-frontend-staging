@@ -13,8 +13,11 @@ const flattenLinks = (links: NavLinkLike[]): NavLinkLike[] =>
 
 const hrefSlug = (href?: string) => {
   const value = normalizeHref(href);
-  if (!value.startsWith("#page-")) return "";
-  return value.slice("#page-".length);
+  if (!value || value === "/" || value === "#") return "";
+  if (value.startsWith("#page-")) return value.slice("#page-".length);
+  if (value.startsWith("#")) return value.slice(1);
+  const path = value.replace(/^https?:\/\/[^/]+/i, "");
+  return path.replace(/^\/+/, "").split(/[/?#]/)[0] || "";
 };
 
 /** Hide nav entries whose matching pageLink is marked hidden (Show on website off). */
@@ -38,12 +41,21 @@ export function filterMenuByHiddenPageLinks<T extends NavLinkLike>(
       const linkSlug = hrefSlug(link.href);
       const linkLabel = (link.label || "").trim().toLowerCase();
       if (itemHref && linkHref && itemHref === linkHref) return true;
-      if (itemSlug && linkSlug && itemSlug === linkSlug) return true;
+      const canonical = (value: string) => {
+        if (value === "service" || value === "services") return "service";
+        if (value === "team" || value === "teams") return "team";
+        if (value === "blog" || value === "blogs") return "blog";
+        if (value === "event" || value === "events") return "event";
+        if (value === "gallery" || value === "galleries") return "gallery";
+        return value;
+      };
+      if (itemSlug && linkSlug && canonical(itemSlug) === canonical(linkSlug)) {
+        return true;
+      }
       if (
         itemLabel &&
         linkLabel &&
-        itemLabel === linkLabel &&
-        (itemSlug === linkSlug || (!itemSlug && !linkSlug))
+        canonical(itemLabel) === canonical(linkLabel)
       ) {
         return true;
       }

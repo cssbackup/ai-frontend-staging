@@ -164,6 +164,7 @@ export async function refreshCategoryContentFromApi(signal?: AbortSignal) {
 }
 
 const plumbingVariants = new Map<string, Record<string, unknown>>();
+const petVariants = new Map<string, Record<string, unknown>>();
 const industrySections =
   (
     categoryContentJson as {
@@ -183,6 +184,35 @@ for (const pack of Object.values(industrySections)) {
     }
   }
 }
+
+const petSections =
+  (
+    categoryContentJson as {
+      categories?: {
+        "Pet Services"?: {
+          sections?: Record<string, { variants?: Record<string, unknown> }>;
+        };
+      };
+    }
+  ).categories?.["Pet Services"]?.sections || {};
+for (const pack of Object.values(petSections)) {
+  const variants = pack?.variants;
+  if (!variants) continue;
+  for (const [key, value] of Object.entries(variants)) {
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      petVariants.set(key, value as Record<string, unknown>);
+    }
+  }
+}
+
+/** Local multi-page pet theme. The content bundle only lists the single-page starter. */
+const localPetTemplateIds: string[] = (
+  (
+    categoryContentJson as {
+      categories?: { "Pet Services"?: { templates?: string[] } };
+    }
+  ).categories?.["Pet Services"]?.templates ?? []
+).filter((id): id is string => typeof id === "string" && id.length > 0);
 
 export const PLUMBING_TEMPLATE_ID = "template-plumbing-1";
 
@@ -302,7 +332,12 @@ export const getTemplatesForCategory = (
   if (isServiceProviderProfessionalCategory(category, websiteRelated)) {
     return [plumbingTemplate];
   }
-  const templateIds = getTemplateIdsForCategory(category);
+  const templateIds = [...getTemplateIdsForCategory(category)];
+  if (category.trim().toLowerCase() === "pet services") {
+    for (const id of localPetTemplateIds) {
+      if (!templateIds.includes(id)) templateIds.push(id);
+    }
+  }
   const templates = getBuilderTemplates().filter(
     (template) => !template.status || template.status === "Active",
   );
@@ -675,6 +710,8 @@ const mergeCategoryData = (
         ? plumbingVariants.get(variant)
         : undefined;
       if (plumbing) return [variant, plumbing as SectionData];
+      const pet = variant.startsWith("Pet") ? petVariants.get(variant) : undefined;
+      if (pet) return [variant, pet as SectionData];
 
       const merged = sanitizeSectionListFields(
         {
@@ -2017,7 +2054,30 @@ const SECTION_ORDER_PREVIEW = [
 ] as const;
 
 /** Split Breadcrumb sections are the site-wide template; page bodies no longer keep a private banner. */
-const PAGE_BODIES_WITH_OWN_BREADCRUMB = new Set<string>([]);
+const PAGE_BODIES_WITH_OWN_BREADCRUMB = new Set<string>([
+  "PetAboutPage1",
+  "PetGallery1",
+  "PetServicePage1",
+  "PetTeamPage1",
+  "PetBlogPage1",
+  "PetContactPage1",
+  "PetFaq1",
+  "PetAppointment1",
+  "PetPricing1",
+  "PetTestimonialPage1",
+  "PetPartners1",
+  "PetMissionPage1",
+  "PetWhyChooseUsPage1",
+  "PetServiceLocationPage1",
+  "PetSitemap1",
+  "PetDisclaimer1",
+  "PetTerms1",
+  "PetCookiePolicy1",
+  "PetBlogDetails1",
+  "PetServiceDetails1",
+  "PetTeamDetails1",
+  "PetServiceAreaDetails1",
+]);
 
 export function pageBodyHasOwnBreadcrumb(pageBodyKey?: string) {
   return Boolean(pageBodyKey && PAGE_BODIES_WITH_OWN_BREADCRUMB.has(pageBodyKey));
@@ -2431,6 +2491,15 @@ export const resolveLayoutPreview = (
       return {
         sectionType: variantKey.replace(/\d+$/, "") || variantKey,
         data: plumbing as SectionData,
+      };
+    }
+  }
+  if (variantKey.startsWith("Pet")) {
+    const pet = petVariants.get(variantKey);
+    if (pet) {
+      return {
+        sectionType: variantKey.replace(/\d+$/, "") || variantKey,
+        data: pet as SectionData,
       };
     }
   }

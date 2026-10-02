@@ -45,6 +45,7 @@ import {
   applyTopbarLayoutSkins,
 } from "./src/data/templateFlow";
 import { sectionRegistry } from "./src/lib/sectionRegistry";
+import { site as petDefaultSite } from "./src/components/sections/pet/petDefaults";
 import {
   INLINE_TEXT_FORMATS_KEY,
   readInlineTextFormats,
@@ -987,7 +988,11 @@ const buildTemplateMultiPageMenu = (
   // controlled separately (onboarding Choose pages / Nav Menu editor).
   const canonicalLinks = definitions.map((definition) => {
     const slug = normalizePageSlug(definition.id);
-    const savedLink = savedBySlug.get(slug);
+    const savedLink =
+      savedBySlug.get(slug) ||
+      navigationLinks.find(
+        (link) => normalizePageSlug(link.label) === slug,
+      );
     return {
       ...(savedLink || {}),
       label: savedLink?.label || definition.label,
@@ -1882,11 +1887,10 @@ const alignTemplatePageSections = (
     }
 
     if (
-      pageDefinition.sectionType !== "AboutPage" &&
-      (pageBodyHasOwnBreadcrumb(section.variant) ||
-        pageBodyHasOwnBreadcrumb(
-          template.sectionVariants[pageDefinition.sectionType],
-        ))
+      pageBodyHasOwnBreadcrumb(section.variant) ||
+      pageBodyHasOwnBreadcrumb(
+        template.sectionVariants[pageDefinition.sectionType],
+      )
     ) {
       return [section];
     }
@@ -2692,6 +2696,41 @@ const readServiceItemsFromData = (data: SectionData): ServiceItem[] => {
           typeof item.seoKeywords === "string" ? item.seoKeywords : "",
       }))
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  }
+
+  if (Array.isArray(data.services) && data.services.length > 0) {
+    return data.services
+      .map((item, index) => {
+        if (!item || typeof item !== "object") return null;
+        const record = item as Record<string, unknown>;
+        const title = typeof record.title === "string" ? record.title : "";
+        if (!title) return null;
+        const link = typeof record.link === "string" ? record.link : "";
+        const slugFromLink = link.replace(/^\/+/, "").split("/")[0] || "";
+        return {
+          id:
+            (typeof record.id === "string" && record.id) ||
+            `service-${index + 1}`,
+          title,
+          category: "Service",
+          desc:
+            (typeof record.description === "string" && record.description) ||
+            (typeof record.desc === "string" && record.desc) ||
+            "",
+          content: "",
+          image: typeof record.image === "string" ? record.image : "/bg1.jpg",
+          alt: title,
+          slug:
+            slugFromLink || createPageSlug(title) || `service-${index + 1}`,
+          order: index + 1,
+          active: record.active !== false,
+          layout: "",
+          seoTitle: "",
+          seoDescription: "",
+          seoKeywords: "",
+        };
+      })
+      .filter((item): item is ServiceItem => item !== null);
   }
 
   const slides = Array.isArray(data.serviceSlides)
@@ -3964,7 +4003,46 @@ const readTeamItemsFromData = (data: SectionData): TeamItem[] => {
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   }
 
-  return [];
+  const members = Array.isArray(data.members) ? data.members : [];
+  return members
+    .map((item, index) => {
+      if (!item || typeof item !== "object") return null;
+      const record = item as Record<string, unknown>;
+      const title =
+        (typeof record.name === "string" && record.name) ||
+        (typeof record.title === "string" && record.title) ||
+        "";
+      if (!title) return null;
+      const link = typeof record.link === "string" ? record.link : "";
+      const slugFromLink = link.replace(/^\/+/, "").split("/")[0] || "";
+      return {
+        id:
+          (typeof record.id === "string" && record.id) ||
+          `team-${index + 1}`,
+        title,
+        category:
+          (typeof record.category === "string" &&
+            record.category &&
+            record.category !== record.role &&
+            record.category) ||
+          "Team",
+        desc:
+          (typeof record.role === "string" && record.role) ||
+          (typeof record.desc === "string" && record.desc) ||
+          "",
+        content: "",
+        image: typeof record.image === "string" ? record.image : "/bg1.jpg",
+        alt: title,
+        slug: slugFromLink || createPageSlug(title) || `team-${index + 1}`,
+        order: typeof record.order === "number" ? record.order : index + 1,
+        active: record.active !== false,
+        layout: "",
+        seoTitle: "",
+        seoDescription: "",
+        seoKeywords: "",
+      };
+    })
+    .filter((item): item is TeamItem => item !== null);
 };
 
 const buildTeamPageState = (data: SectionData): TeamPageState => ({
@@ -7840,6 +7918,172 @@ function EditorPage({
   }, []);
 
   useEffect(() => {
+    const onOpenManager = (event: Event) => {
+      const manager = (
+        event as CustomEvent<{ manager?: string }>
+      ).detail?.manager;
+      if (manager !== "Blogs") return;
+      const hasPetBlog = sectionsRef.current.some(
+        (section) =>
+          section.variant === "PetBlog1" || Boolean(section.data?.PetBlog1),
+      );
+      if (!hasPetBlog) return;
+      setPageLinks((current) => {
+        if (flattenPageLinks(current).some((link) => link.kind === "blog")) {
+          return current;
+        }
+        const section = sectionsRef.current.find(
+          (item) => item.variant === "PetBlog1" || item.data?.PetBlog1,
+        );
+        const variant =
+          section?.variant === "PetBlog1" ? "PetBlog1" : section?.variant;
+        const data =
+          (variant && section
+            ? (section.data?.[variant] as SectionData | undefined)
+            : undefined) ??
+          (section?.data?.PetBlog1 as SectionData | undefined);
+        const sectionPosts = Array.isArray(data?.posts) ? data.posts : [];
+        const defaultPosts = Array.isArray(petDefaultSite.ourBlogs?.posts)
+          ? petDefaultSite.ourBlogs.posts
+          : [];
+        const posts = sectionPosts.length ? sectionPosts : defaultPosts;
+        const blogLinks = posts.flatMap((item, index) => {
+          if (!item || typeof item !== "object") return [];
+          const record = item as Record<string, unknown>;
+          const title = typeof record.title === "string" ? record.title : "";
+          if (!title) return [];
+          const link = typeof record.link === "string" ? record.link : "";
+          const slug =
+            link.replace(/^\/+/, "").split("/")[0] ||
+            createPageSlug(title) ||
+            `post-${index + 1}`;
+          return [
+            {
+              label: title,
+              href: `#page-blog-${slug}`,
+              kind: "blog" as const,
+              slug,
+              image: typeof record.image === "string" ? record.image : "",
+              shortDescription:
+                typeof record.excerpt === "string" ? record.excerpt : "",
+              category:
+                typeof record.category === "string" ? record.category : "General",
+              createdAt: typeof record.date === "string" ? record.date : "",
+              order: index + 1,
+              hidden: record.hidden === true,
+              layout: "BlogPage-1",
+            },
+          ];
+        });
+        if (!blogLinks.length) return current;
+        return [...current, ...blogLinks];
+      });
+    };
+    window.addEventListener("ai-builder-open-manager", onOpenManager);
+    return () =>
+      window.removeEventListener("ai-builder-open-manager", onOpenManager);
+  }, [setPageLinks]);
+
+  useEffect(() => {
+    const blogs = flattenPageLinks(pageLinks).filter(
+      (link) => link.kind === "blog",
+    );
+    const hasPetBlog = sectionsRef.current.some(
+      (section) =>
+        section.variant === "PetBlog1" || Boolean(section.data?.PetBlog1),
+    );
+    if (!hasPetBlog || !blogs.length) return;
+
+    const blogKey = (value: string) =>
+      value
+        .trim()
+        .toLowerCase()
+        .replace(/^#page-blog-/i, "")
+        .replace(/^\/+/, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+    const hiddenKeys = new Set<string>();
+    blogs.forEach((blog) => {
+      if (blog.hidden !== true) return;
+      [blog.label, blog.slug, blog.href].forEach((value) => {
+        const key = blogKey(typeof value === "string" ? value : "");
+        if (key) hiddenKeys.add(key);
+      });
+    });
+
+    setSections((current) => {
+      let changed = false;
+      const next = current.map((section) => {
+        if (
+          section.variant !== "PetBlog1" &&
+          section.variant !== "PetBlogPage1" &&
+          !section.data?.PetBlog1 &&
+          !section.data?.PetBlogPage1
+        ) {
+          return section;
+        }
+        const variant =
+          section.variant === "PetBlog1" || section.variant === "PetBlogPage1"
+            ? section.variant
+            : section.data?.PetBlogPage1
+              ? "PetBlogPage1"
+              : "PetBlog1";
+        const currentData =
+          (section.data?.[variant] as SectionData | undefined) ??
+          (section.data?.PetBlog1 as SectionData | undefined) ??
+          ({} as SectionData);
+        const fallbackPosts =
+          variant === "PetBlogPage1"
+            ? petDefaultSite.blogSec?.posts
+            : petDefaultSite.ourBlogs?.posts;
+        const rawPosts = Array.isArray(currentData.posts) ? currentData.posts : [];
+        const usablePosts = rawPosts.some(
+          (post) =>
+            post &&
+            typeof post === "object" &&
+            typeof (post as { title?: unknown }).title === "string" &&
+            String((post as { title?: string }).title).trim(),
+        );
+        const sourcePosts = usablePosts
+          ? rawPosts
+          : Array.isArray(fallbackPosts)
+            ? fallbackPosts
+            : [];
+        const posts = sourcePosts.map((post) => {
+          if (!post || typeof post !== "object") return post;
+          const record = post as Record<string, unknown>;
+          const titleKey = blogKey(
+            typeof record.title === "string" ? record.title : "",
+          );
+          const linkKey = blogKey(
+            typeof record.link === "string" ? record.link : "",
+          );
+          const hidden =
+            (titleKey && hiddenKeys.has(titleKey)) ||
+            (linkKey && hiddenKeys.has(linkKey));
+          if (record.hidden === hidden) return post;
+          return { ...record, hidden };
+        });
+        if (JSON.stringify(currentData.posts ?? []) === JSON.stringify(posts)) {
+          return section;
+        }
+        changed = true;
+        return {
+          ...section,
+          data: {
+            ...section.data,
+            [variant]: {
+              ...currentData,
+              posts,
+            },
+          },
+        };
+      });
+      return changed ? next : current;
+    });
+  }, [pageLinks]);
+
+  useEffect(() => {
     const findServiceSection = (items: SectionItem[]) =>
       items.find(
         (section) =>
@@ -7849,6 +8093,22 @@ function EditorPage({
             ["service", "services"].includes(normalizePageSlug(section.page || ""))),
       );
 
+    const readHomePetServices = (items: SectionItem[]) => {
+      const home = items.find(
+        (section) =>
+          section.variant === "PetService1" ||
+          Boolean(section.data?.PetService1),
+      );
+      if (!home) return [] as ServiceItem[];
+      const variant =
+        home.variant === "PetService1" ? "PetService1" : home.variant;
+      const data =
+        (home.data?.[variant] as SectionData | undefined) ??
+        (home.data?.PetService1 as SectionData | undefined);
+      if (!data) return [] as ServiceItem[];
+      return readServiceItemsFromData(data);
+    };
+
     const emitServiceState = (items: SectionItem[]) => {
       const section = findServiceSection(items);
       if (!section) return;
@@ -7856,11 +8116,22 @@ function EditorPage({
         (section.data[section.variant] as SectionData | undefined) ??
         (section.data["ServicePage-1"] as SectionData | undefined) ??
         ({} as SectionData);
+      const state = buildServicePageState(data);
+      const homeServices = readHomePetServices(items);
+      const services =
+        state.services.length > 0 ? state.services : homeServices;
+      const listingLayout = section.variant?.startsWith("ServicePage-")
+        ? section.variant
+        : typeof data.layout === "string" &&
+            data.layout.startsWith("ServicePage-")
+          ? data.layout
+          : state.layout;
       window.dispatchEvent(
         new CustomEvent("ai-builder-service-page-state", {
           detail: {
-            ...buildServicePageState(data),
-            layout: section.variant || "ServicePage-1",
+            ...state,
+            services,
+            layout: listingLayout || "ServicePage-1",
           },
         }),
       );
@@ -7941,6 +8212,94 @@ function EditorPage({
       setSections((current) => {
         const withSection = addServicePageSection(current, category);
         const next = withSection.map((section) => {
+          const pageSlug = normalizePageSlug(section.page || "");
+          const isPetService =
+            section.variant === "PetService1" || Boolean(section.data?.PetService1);
+          const requestedLayout =
+            typeof detail.layout === "string" ? detail.layout : "";
+          const applyListingLayout =
+            (pageSlug === "service" || pageSlug === "services") &&
+            /^ServicePage-[1-4]$/.test(requestedLayout) &&
+            !(
+              section.variant === "PetService1" &&
+              requestedLayout === "ServicePage-1"
+            );
+          if (
+            (section.variant === "PetServicePage1" ||
+              Boolean(section.data?.PetServicePage1)) &&
+            (pageSlug === "service" ||
+              pageSlug === "services" ||
+              section.type === "ServicePage" ||
+              section.id === "ServicePage") &&
+            /^ServicePage-[1-4]$/.test(requestedLayout)
+          ) {
+            const variant = "PetServicePage1";
+            const currentData =
+              (section.data?.[variant] as SectionData | undefined) ??
+              (section.data?.[section.variant] as SectionData | undefined) ??
+              ({} as SectionData);
+            return {
+              ...section,
+              variant,
+              data: {
+                ...section.data,
+                [variant]: applyServicePageStateToData(currentData, {
+                  ...detail,
+                  layout: requestedLayout,
+                }),
+              },
+            };
+          }
+          if (isPetService && !applyListingLayout) {
+            const variant =
+              section.variant === "PetService1" ? "PetService1" : section.variant;
+            const currentData =
+              (section.data?.[variant] as SectionData | undefined) ??
+              (section.data?.PetService1 as SectionData | undefined) ??
+              ({} as SectionData);
+            const existing = Array.isArray(currentData.services)
+              ? currentData.services
+              : [];
+            const services = [...detail.services]
+              .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+              .map((service, index) => {
+                const previous =
+                  existing.find(
+                    (item) =>
+                      item &&
+                      typeof item === "object" &&
+                      "id" in item &&
+                      item.id === service.id,
+                  ) || existing[index];
+                const previousRecord =
+                  previous && typeof previous === "object"
+                    ? (previous as Record<string, unknown>)
+                    : {};
+                return {
+                  ...previousRecord,
+                  id: service.id,
+                  title: service.title,
+                  description: service.desc,
+                  image: service.image,
+                  order: service.order ?? index + 1,
+                  active: service.active !== false,
+                  link:
+                    (typeof previousRecord.link === "string" &&
+                      previousRecord.link) ||
+                    `/${service.slug || createPageSlug(service.title) || service.id}`,
+                };
+              });
+            return {
+              ...section,
+              data: {
+                ...section.data,
+                [variant]: {
+                  ...currentData,
+                  services,
+                },
+              },
+            };
+          }
           if (
             section.id !== "ServicePage" &&
             section.type !== "ServicePage" &&
@@ -8207,8 +8566,27 @@ function EditorPage({
           section.id === "TeamPage" ||
           section.type === "TeamPage" ||
           (section.type === "Team" &&
-            normalizePageSlug(section.page || "") === "teams"),
+            ["team", "teams"].includes(normalizePageSlug(section.page || ""))),
       );
+
+    const readHomePetTeam = (items: SectionItem[]) => {
+      const home = items.find(
+        (section) =>
+          section.variant === "PetTeam1" || Boolean(section.data?.PetTeam1),
+      );
+      const variant = home?.variant === "PetTeam1" ? "PetTeam1" : home?.variant;
+      const data =
+        (variant && home
+          ? (home.data?.[variant] as SectionData | undefined)
+          : undefined) ??
+        (home?.data?.PetTeam1 as SectionData | undefined) ??
+        ({} as SectionData);
+      const fromSection = readTeamItemsFromData(data);
+      if (fromSection.length) return fromSection;
+      const defaults = petDefaultSite.ourTeam as { members?: unknown } | undefined;
+      if (!Array.isArray(defaults?.members)) return [];
+      return readTeamItemsFromData({ members: defaults.members } as SectionData);
+    };
 
     const emitTeamState = (items: SectionItem[]) => {
       const section = findTeamSection(items);
@@ -8217,11 +8595,21 @@ function EditorPage({
         (section.data[section.variant] as SectionData | undefined) ??
         (section.data["TeamPage-1"] as SectionData | undefined) ??
         ({} as SectionData);
+      const state = buildTeamPageState(data);
+      const homeTeam = readHomePetTeam(items);
+      const teamMembers =
+        state.teamMembers.length > 0 ? state.teamMembers : homeTeam;
+      const listingLayout = section.variant?.startsWith("TeamPage-")
+        ? section.variant
+        : typeof data.layout === "string" && data.layout.startsWith("TeamPage-")
+          ? data.layout
+          : state.layout;
       window.dispatchEvent(
         new CustomEvent("ai-builder-team-page-state", {
           detail: {
-            ...buildTeamPageState(data),
-            layout: section.variant || "TeamPage-1",
+            ...state,
+            teamMembers,
+            layout: listingLayout || "TeamPage-1",
           },
         }),
       );
@@ -8266,12 +8654,74 @@ function EditorPage({
       setSections((current) => {
         const withSection = addTeamPageSection(current, category);
         const next = withSection.map((section) => {
+          const teamPageSlug = normalizePageSlug(section.page || "");
+          const isPetTeam =
+            section.variant === "PetTeam1" || Boolean(section.data?.PetTeam1);
+          const requestedTeamLayout =
+            typeof detail.layout === "string" ? detail.layout : "";
+          const applyTeamListingLayout =
+            (teamPageSlug === "team" || teamPageSlug === "teams") &&
+            /^TeamPage-[1-4]$/.test(requestedTeamLayout) &&
+            !(
+              section.variant === "PetTeam1" &&
+              requestedTeamLayout === "TeamPage-1"
+            );
+          if (isPetTeam && !applyTeamListingLayout) {
+            const variant =
+              section.variant === "PetTeam1" ? "PetTeam1" : section.variant;
+            const currentData =
+              (section.data?.[variant] as SectionData | undefined) ??
+              (section.data?.PetTeam1 as SectionData | undefined) ??
+              ({} as SectionData);
+            const existing = Array.isArray(currentData.members)
+              ? currentData.members
+              : [];
+            const members = [...detail.teamMembers]
+              .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+              .map((member, index) => {
+                const previous =
+                  existing.find(
+                    (item) =>
+                      item &&
+                      typeof item === "object" &&
+                      "id" in item &&
+                      (item as { id?: string }).id === member.id,
+                  ) || existing[index];
+                const previousRecord =
+                  previous && typeof previous === "object"
+                    ? (previous as Record<string, unknown>)
+                    : {};
+                return {
+                  ...previousRecord,
+                  id: member.id,
+                  name: member.title,
+                  role: member.desc || member.category,
+                  image: member.image,
+                  order: member.order ?? index + 1,
+                  active: member.active !== false,
+                  link:
+                    (typeof previousRecord.link === "string" &&
+                      previousRecord.link) ||
+                    `/${member.slug || createPageSlug(member.title) || member.id}`,
+                };
+              });
+            return {
+              ...section,
+              data: {
+                ...section.data,
+                [variant]: {
+                  ...currentData,
+                  members,
+                },
+              },
+            };
+          }
           if (
             section.id !== "TeamPage" &&
             section.type !== "TeamPage" &&
             !(
               section.type === "Team" &&
-              normalizePageSlug(section.page || "") === "teams"
+              ["team", "teams"].includes(teamPageSlug)
             )
           ) {
             return section;
@@ -15886,16 +16336,23 @@ function EditorPage({
   const currentPageLink = flattenPageLinks(pageLinks).find(
     (link) => normalizePageSlug(link.label) === normalizePageSlug(page),
   );
+  const editorTemplate = getBuilderTemplate(templateId, category);
+  const petOwnsBlogListing =
+    editorTemplate?.sectionVariants?.BlogPage === "PetBlogPage1";
   const isViewingBlogIndex = Boolean(
-    currentPageLink && isBlogIndexPageLink(currentPageLink),
+    currentPageLink &&
+      isBlogIndexPageLink(currentPageLink) &&
+      !petOwnsBlogListing,
   );
   const pageScopedSlug = getMultiPageSlugFromHref(currentPageLink?.href || "");
   const currentPageSlug =
     pageScopedSlug ||
     (isSinglePageTemplate ? "home" : normalizePageSlug(page));
   const pageShellSectionTypes = ["Topbar", "Header", "Footer"];
-  const editorTemplate = getBuilderTemplate(templateId, category);
-  const countriesServeSection = findEnabledCountriesServeSection(syncedSections);
+  const petTheme = editorTemplate?.sectionVariants?.Header === "PetHeader1";
+  const countriesServeSection = petTheme
+    ? null
+    : findEnabledCountriesServeSection(syncedSections);
   const visibleSectionsRaw = dropExtraPageBreadcrumbs(
     isViewingBlogIndex || masterDetailView
       ? syncedSections.filter((section) =>
@@ -15905,10 +16362,18 @@ function EditorPage({
       ? syncedSections.filter(
           (section) =>
             pageShellSectionTypes.includes(section.type) ||
-            section.type === "CountriesServe" ||
-            normalizePageSlug(section.page || "") === currentPageSlug,
+            (section.type === "CountriesServe" && !petTheme) ||
+            (normalizePageSlug(section.page || "") === currentPageSlug &&
+              !(petTheme && section.type === "CTA")),
         )
-      : syncedSections.filter((section) => !section.page),
+      : syncedSections.filter(
+          (section) =>
+            !section.page &&
+            !(
+              petTheme &&
+              (section.type === "CountriesServe" || section.type === "CTA")
+            ),
+        ),
     editorTemplate,
   );
   const hasInnerPageBody = visibleSectionsRaw.some(
@@ -16610,7 +17075,17 @@ function EditorPage({
             pageSectionLinks={pageSectionLinks}
             isSinglePage={isSinglePageTemplate}
             onEdit={() => {
-              const manager = resolveManagerForSection(section);
+              const manager =
+                renderVariant === "PetService1" || section.variant === "PetService1"
+                  ? "Services"
+                  : renderVariant === "PetTeam1" || section.variant === "PetTeam1"
+                    ? "Teams"
+                    : renderVariant === "PetBlog1" ||
+                        section.variant === "PetBlog1" ||
+                        renderVariant === "PetBlogPage1" ||
+                        section.variant === "PetBlogPage1"
+                      ? "Blogs"
+                      : resolveManagerForSection(section);
               if (manager) {
                 window.dispatchEvent(
                   new CustomEvent("ai-builder-open-manager", {

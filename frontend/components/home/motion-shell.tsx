@@ -14,7 +14,11 @@ export default function MotionShell({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const rootEl = root.current;
-    if (!rootEl || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    if (!rootEl) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      rootEl.querySelectorAll<HTMLElement>("[data-hero-dashboard]").forEach((el) => {
+        el.style.transform = "none";
+      });
       return;
     }
 
@@ -102,10 +106,9 @@ export default function MotionShell({ children }: { children: ReactNode }) {
           const parentTop = frame.offsetTop || 0;
           return window.innerHeight / 2 - parentTop - visualHeight / 2;
         };
-        // Straight mockup (no tilt) — rise + scale on scroll
         gsap.set(heroDevice, {
-          y: 220,
-          scale: 0.72,
+          y: 150,
+          scale: 0.9,
           force3D: true,
         });
         const tl = gsap.timeline({

@@ -313,7 +313,7 @@ export default function CategoryType({
             </div>
           </div>
 
-          <div className="mt-5 min-h-0 flex-1 px-1 pt-1">
+          <div className="onboarding-responsive-scroll mt-5 min-h-0 flex-1 overflow-y-auto overscroll-contain px-1 pb-1 pt-1 lg:overflow-y-visible">
             {loading ? (
               <div className="flex items-center justify-center gap-2 py-16 text-sm text-slate-500">
                 <Loader2 className="size-4 animate-spin text-[#315ff4]" />
@@ -321,9 +321,8 @@ export default function CategoryType({
               </div>
             ) : (
               <>
-                {/* 4 per row, 2 rows visible — remaining categories scroll inside */}
-                <div className="max-h-[calc((90px*2)+0.75rem)] overflow-x-hidden overflow-y-auto overscroll-contain pr-1 sm:max-h-[calc((96px*2)+1rem)]">
-                  <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
+                <div>
+                  <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
                     {filteredTypes.map((item) => {
                       const Icon = item.icon;
                       const isActive = selected === item.title;
@@ -333,7 +332,7 @@ export default function CategoryType({
                           key={item.slug || item.title}
                           type="button"
                           onClick={() => handleSelect(item.title)}
-                          className={`group relative h-[90px] cursor-pointer overflow-hidden rounded-lg border p-4 text-left transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-[0_12px_28px_rgba(49,95,244,.1)] sm:h-24 ${
+                          className={`group relative h-auto min-h-[108px] cursor-pointer overflow-hidden rounded-lg border p-3 text-left transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-[0_12px_28px_rgba(49,95,244,.1)] lg:h-24 lg:p-4 ${
                             isActive
                               ? "border-[#315ff4] bg-blue-50/50 text-[#08132f] shadow-[0_8px_24px_rgba(49,95,244,.1)] ring-1 ring-[#315ff4]"
                               : "border-slate-200 bg-white hover:border-blue-300 hover:bg-blue-50/30"
@@ -345,13 +344,13 @@ export default function CategoryType({
                             </span>
                           )}
 
-                          <div className="flex items-center justify-between gap-2">
-                            <h3 className="truncate text-base font-semibold text-[#08132f]">
+                          <div className="flex items-start justify-between gap-2">
+                            <h3 className="line-clamp-2 pr-1 text-sm font-semibold leading-snug text-[#08132f] lg:line-clamp-1 lg:text-base">
                               {item.title}
                             </h3>
 
                             <div
-                              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl sm:h-8 sm:w-8 ${
+                              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${
                                 isActive
                                   ? "bg-white text-[#315ff4] shadow-sm"
                                   : "bg-slate-50 text-slate-500"
@@ -361,7 +360,7 @@ export default function CategoryType({
                             </div>
                           </div>
 
-                          <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-500">
+                          <p className="mt-1.5 text-xs leading-4 text-slate-500 lg:mt-2 lg:line-clamp-2 lg:leading-5">
                             {item.desc}
                           </p>
                         </button>

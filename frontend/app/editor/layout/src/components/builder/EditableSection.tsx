@@ -180,10 +180,32 @@ const normalizeEditorNavSlug = (value: string) =>
 
 const findClosestHref = (element: HTMLElement | null) => {
   if (!element) return "";
-  const link =
+  const direct =
     element.closest<HTMLAnchorElement>("a[href]") ||
     element.querySelector<HTMLAnchorElement>("a[href]");
-  return (link?.getAttribute("href") || "").trim();
+  const directHref = (direct?.getAttribute("href") || "").trim();
+  if (directHref) return directHref;
+
+  const rect = element.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + Math.min(rect.height / 2, 12);
+  let node: HTMLElement | null = element.parentElement;
+  for (let depth = 0; node && depth < 4; depth += 1, node = node.parentElement) {
+    const overlay = Array.from(
+      node.querySelectorAll<HTMLAnchorElement>("a[href]"),
+    ).find((anchor) => {
+      const href = (anchor.getAttribute("href") || "").trim();
+      if (!href || /^(tel:|mailto:|javascript:)/i.test(href)) return false;
+      if (anchor.contains(element)) return true;
+      const position = window.getComputedStyle(anchor).position;
+      if (position !== "absolute" && position !== "fixed") return false;
+      const box = anchor.getBoundingClientRect();
+      return cx >= box.left && cx <= box.right && cy >= box.top && cy <= box.bottom;
+    });
+    const href = (overlay?.getAttribute("href") || "").trim();
+    if (href) return href;
+  }
+  return "";
 };
 
 const isChromeSection = (sectionLabel: string) => {
@@ -193,19 +215,6 @@ const isChromeSection = (sectionLabel: string) => {
 
 const isManagerBackedCardArea = (element: HTMLElement | null) =>
   Boolean(element?.closest("[data-editor-no-inline]"));
-
-const isButtonLikeHost = (element: HTMLElement) => {
-  const host = element.closest<HTMLElement>("a, button, [role='button']");
-  if (!host) return false;
-  if (host.tagName === "BUTTON" || host.getAttribute("role") === "button") {
-    return true;
-  }
-  if (host.tagName !== "A") return false;
-  const className = `${host.className || ""}`.toLowerCase();
-  return /(?:^|[\s:_-])(?:btn|button)(?:$|[\s:_-])|rounded-(?:full|2xl|xl|lg)|(?:^|\s)(?:px-|py-|inline-flex)/.test(
-    className,
-  );
-};
 
 type InlineCommandState = {
   bold: boolean;
@@ -1003,7 +1012,12 @@ export default function EditableSection({
     }
 
     const slug = normalizeEditorNavSlug(raw);
-    if (!slug) return null;
+    if (!slug) {
+      if (/^\/+$/.test(raw)) {
+        return { pageLabel: "Home", sectionHref: null, externalHref: null };
+      }
+      return null;
+    }
     if (slug === "home") {
       return { pageLabel: "Home", sectionHref: null, externalHref: null };
     }
@@ -1031,12 +1045,6 @@ export default function EditableSection({
       sectionHref: null,
       externalHref: null,
     };
-  };
-
-  const canShowGoToIcon = (element: HTMLElement | null) => {
-    if (!element) return false;
-    if (isChromeSection(label)) return Boolean(findClosestHref(element));
-    return isButtonLikeHost(element) && Boolean(findClosestHref(element));
   };
 
   const goToResolvedLink = (target: HoveredLinkNav) => {
@@ -1096,8 +1104,10 @@ export default function EditableSection({
 
     const href = findClosestHref(element);
     const textLabel = getInlinePersistableText(element);
-    const target = canShowGoToIcon(element)
-      ? resolveEditorLinkTarget(href, textLabel, isChromeSection(label))
+    const hasNavigableHref =
+      Boolean(href) && !/^(tel:|mailto:|javascript:)/i.test(href);
+    const target = hasNavigableHref
+      ? resolveEditorLinkTarget(href, textLabel, true)
       : null;
 
     if (target) {
@@ -3111,12 +3121,15 @@ export default function EditableSection({
 
               {(() => {
                 const active = activeEditableRef.current;
+                const activeHref = findClosestHref(active);
                 const target =
-                  active && canShowGoToIcon(active)
+                  active &&
+                  activeHref &&
+                  !/^(tel:|mailto:|javascript:)/i.test(activeHref)
                     ? resolveEditorLinkTarget(
-                        findClosestHref(active),
+                        activeHref,
                         getInlinePersistableText(active),
-                        isChromeSection(label),
+                        true,
                       )
                     : null;
                 if (!target) return null;
@@ -3887,12 +3900,12 @@ export default function EditableSection({
             <div
               data-editor-toolbar
               data-editor-link-nav-overlay
-              className="pointer-events-none fixed z-[10040] flex items-center justify-center"
+              className="pointer-events-auto fixed z-[10040] flex items-start justify-center"
               style={{
-                top: hoveredLinkNav.top,
-                left: hoveredLinkNav.left,
-                width: hoveredLinkNav.width,
-                height: hoveredLinkNav.height,
+                top: Math.max(4, hoveredLinkNav.top - 42),
+                left: hoveredLinkNav.left + hoveredLinkNav.width / 2,
+                transform: "translateX(-50%)",
+                height: hoveredLinkNav.height + 46,
               }}
               onMouseLeave={(event) => {
                 const next = event.relatedTarget;

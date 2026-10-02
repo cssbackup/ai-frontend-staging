@@ -3,11 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --port 3003",
+    "dev": "next dev --port 3000",
     "prebuild": "node scripts/generate-prisma-client.mjs",
     "build": "next build",
     "postinstall": "node scripts/generate-prisma-client.mjs",
-    "start": "next start --port 3003",
+    "start": "next start --port 3000",
     "lint": "eslint"
   },
   "dependencies": {
@@ -43,5 +43,12 @@
     "eslint-config-next": "16.2.9",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "allowScripts": {
+    "@prisma/client@6.19.3": true,
+    "@prisma/engines@6.19.3": true,
+    "prisma@6.19.3": true,
+    "sharp@0.34.5": true,
+    "unrs-resolver@1.12.2": true
   }
 }

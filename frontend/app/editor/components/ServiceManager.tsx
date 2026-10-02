@@ -129,6 +129,12 @@ const isServicesPageLink = (link: {
   return (
     href === "#page-service" ||
     href === "#page-services" ||
+    href === "#service" ||
+    href === "#services" ||
+    href === "/service" ||
+    href === "/services" ||
+    href.endsWith("/service") ||
+    href.endsWith("/services") ||
     label === "service" ||
     label === "services"
   );
@@ -1114,12 +1120,24 @@ export default function ServiceManager({
                       <span className="text-sm font-semibold text-slate-700">
                         {service.order ?? "—"}
                       </span>
-                      <span
+                      <button
+                        type="button"
+                        onClick={() =>
+                          persist({
+                            ...pageState,
+                            services: pageState.services.map((item) =>
+                              item.id === service.id
+                                ? { ...item, active: !isActive }
+                                : item,
+                            ),
+                          })
+                        }
                         className={`inline-flex w-fit items-center gap-1 rounded-full px-2 py-1 text-[11px] font-bold ${
                           isActive
                             ? "bg-emerald-50 text-emerald-700"
                             : "bg-slate-100 text-slate-500"
                         }`}
+                        aria-label={`${isActive ? "Deactivate" : "Activate"} ${service.title}`}
                       >
                         {isActive ? (
                           <Eye size={12} />
@@ -1127,7 +1145,7 @@ export default function ServiceManager({
                           <EyeOff size={12} />
                         )}
                         {isActive ? "Active" : "Inactive"}
-                      </span>
+                      </button>
                       <div className="flex justify-end gap-1">
                         <button
                           type="button"

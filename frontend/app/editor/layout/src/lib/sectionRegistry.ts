@@ -160,6 +160,38 @@ import PlumbingDisclaimer1 from "../components/sections/disclaimer/PlumbingDiscl
 import PlumbingTermsConditions1 from "../components/sections/terms-conditions/PlumbingTermsConditions1";
 import PlumbingCookiePolicy1 from "../components/sections/cookie-policy/PlumbingCookiePolicy1";
 import PlumbingRefundPolicy1 from "../components/sections/refund-policy/PlumbingRefundPolicy1";
+import PetHeader1 from "../components/sections/header/PetHeader1";
+import PetFooter1 from "../components/sections/footer/PetFooter1";
+import PetBanner1 from "../components/sections/banner/PetBanner1";
+import PetAbout1 from "../components/sections/about/PetAbout1";
+// import PetServiceArea1 from "../components/sections/service-area/PetServiceArea1";
+import PetService1 from "../components/sections/service/PetService1";
+import PetHowItWorks1 from "../components/sections/how-we-work/PetHowItWorks1";
+import PetWhyChooseUs1 from "../components/sections/whychooseus/PetWhyChooseUs1";
+import PetTeam1 from "../components/sections/team/PetTeam1";
+import PetBlog1 from "../components/sections/blog/PetBlog1";
+import PetAboutPage1 from "../components/sections/about/PetAboutPage1";
+import PetGallery1 from "../components/sections/gallery/PetGallery1";
+import PetServicePage1 from "../components/sections/service/PetServicePage1";
+import PetTeamPage1 from "../components/sections/team/PetTeamPage1";
+import PetBlogPage1 from "../components/sections/blog/PetBlogPage1";
+import PetContactPage1 from "../components/sections/contact/PetContactPage1";
+import PetFaq1 from "../components/sections/faq/PetFaq1";
+import PetAppointment1 from "../components/sections/appointment/PetAppointment1";
+import PetPricing1 from "../components/sections/pricing/PetPricing1";
+import PetTestimonialPage1 from "../components/sections/testimonial/PetTestimonialPage1";
+import PetPartners1 from "../components/sections/partners/PetPartners1";
+import PetMissionPage1 from "../components/sections/mission-vision/PetMissionPage1";
+import PetWhyChooseUsPage1 from "../components/sections/whychooseus/PetWhyChooseUsPage1";
+import PetServiceLocationPage1 from "../components/sections/service-location/PetServiceLocationPage1";
+import PetSitemap1 from "../components/sections/sitemap/PetSitemap1";
+import PetDisclaimer1 from "../components/sections/disclaimer/PetDisclaimer1";
+import PetTerms1 from "../components/sections/terms-conditions/PetTerms1";
+import PetCookiePolicy1 from "../components/sections/cookie-policy/PetCookiePolicy1";
+import PetBlogDetails1 from "../components/sections/blog/PetBlogDetails1";
+import PetServiceDetails1 from "../components/sections/service/PetServiceDetails1";
+import PetTeamDetails1 from "../components/sections/team/PetTeamDetails1";
+import PetServiceAreaDetails1 from "../components/sections/service-location/PetServiceAreaDetails1";
 
 import { SectionProps } from "../types/section";
 
@@ -473,6 +505,38 @@ export const sectionRegistry: Record<string, ComponentType<SectionProps>> = {
   PlumbingTermsConditions1,
   PlumbingCookiePolicy1,
   PlumbingRefundPolicy1,
+  PetHeader1,
+  PetFooter1,
+  PetBanner1,
+  PetAbout1,
+  // PetServiceArea1,
+  PetService1,
+  PetHowItWorks1,
+  PetWhyChooseUs1,
+  PetTeam1,
+  PetBlog1,
+  PetAboutPage1,
+  PetGallery1,
+  PetServicePage1,
+  PetTeamPage1,
+  PetBlogPage1,
+  PetContactPage1,
+  PetFaq1,
+  PetAppointment1,
+  PetPricing1,
+  PetTestimonialPage1,
+  PetPartners1,
+  PetMissionPage1,
+  PetWhyChooseUsPage1,
+  PetServiceLocationPage1,
+  PetSitemap1,
+  PetDisclaimer1,
+  PetTerms1,
+  PetCookiePolicy1,
+  PetBlogDetails1,
+  PetServiceDetails1,
+  PetTeamDetails1,
+  PetServiceAreaDetails1,
 };
 
 export function resolveSectionComponent(

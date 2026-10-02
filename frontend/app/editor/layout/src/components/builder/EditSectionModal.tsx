@@ -39,6 +39,7 @@ import {
   X,
 } from "lucide-react";
 import { site as plumbingSite } from "../sections/data/plumbing1";
+import { site as petDefaultSite } from "../sections/pet/petDefaults";
 import { agrandirBolt, generalSansMedium } from "@/app/fonts";
 import {
   BannerSlideData,
@@ -710,6 +711,7 @@ const sidebarItemsBySection: Record<string, string[]> = {
   Product: ["Product Content", "Product Layout"],
   WhyChooseUs: ["WhyChooseUs Content", "WhyChooseUs Layout"],
   HowWeWork: ["HowWeWork Content", "HowWeWork Layout"],
+  HowItWorks: ["HowItWorks Content"],
   Features: ["Features Content", "Features Layout"],
   FeaturedDev: ["FeaturedDev Content", "FeaturedDev Layout"],
   InvestmentOpportunities: [
@@ -1275,6 +1277,7 @@ const normalizeSectionType = (sectionType: string) => {
     testimonial: "Testimonial",
     whychooseus: "WhyChooseUs",
     howwework: "HowWeWork",
+    howitworks: "HowItWorks",
     countriesserve: "CountriesServe",
     awardspage: "AwardsPage",
     missionpage: "MissionPage",
@@ -1417,6 +1420,39 @@ const clampBannerHeight = (height: number) => {
   if (!Number.isFinite(height)) return 70;
 
   return Math.min(100, Math.max(40, height));
+};
+
+const PET_BANNER_SLIDE_FIELDS = [
+  "badge",
+  "titlePrefix",
+  "titleHighlight",
+  "titleSuffix",
+  "description",
+  "bgImage",
+  "primaryBtnText",
+  "primaryBtnLink",
+  "secondaryBtnText",
+  "secondaryBtnLink",
+] as const;
+
+const resolvePetBannerSlides = (data: Record<string, unknown> | undefined) => {
+  const saved = data?.slides;
+  if (Array.isArray(saved) && saved.length) {
+    return saved as Record<string, unknown>[];
+  }
+
+  const defaults = petDefaultSite.banner?.slides;
+  if (!Array.isArray(defaults) || defaults.length === 0) return [];
+
+  const [first, ...rest] = defaults as Record<string, unknown>[];
+  const overlay: Record<string, unknown> = {};
+  if (data) {
+    for (const key of PET_BANNER_SLIDE_FIELDS) {
+      if (typeof data[key] === "string") overlay[key] = data[key];
+    }
+  }
+
+  return [{ ...first, ...overlay }, ...rest.map((slide) => ({ ...slide }))];
 };
 
 const getDefaultBannerData = (
@@ -1641,7 +1677,14 @@ const MissionValueIconPicker = ({
   const rootRef = useRef<HTMLDivElement>(null);
   const selected =
     MISSION_VALUE_ICON_OPTIONS.find((option) => option.value === value) ||
-    MISSION_VALUE_ICON_OPTIONS[0];
+    (value
+      ? { value, label: value }
+      : MISSION_VALUE_ICON_OPTIONS[0]);
+  const missionIconOptions = MISSION_VALUE_ICON_OPTIONS.some(
+    (option) => option.value === selected.value,
+  )
+    ? MISSION_VALUE_ICON_OPTIONS
+    : [selected, ...MISSION_VALUE_ICON_OPTIONS];
   const SelectedIcon = missionValueIconComponents[selected.value];
 
   useEffect(() => {
@@ -1668,7 +1711,7 @@ const MissionValueIconPicker = ({
       </button>
       {open ? (
         <div className="absolute z-30 mt-1 max-h-56 w-full overflow-auto rounded-lg border border-slate-200 bg-white py-1 shadow-[0_8px_24px_rgba(15,23,42,0.12)]">
-          {MISSION_VALUE_ICON_OPTIONS.map((option) => {
+          {missionIconOptions.map((option) => {
             const Icon = missionValueIconComponents[option.value];
             const isActive = option.value === selected.value;
             return (
@@ -2367,6 +2410,76 @@ const GenericArrayFieldEditor = ({
   );
 };
 
+const withCurrentIconOption = (
+  options: readonly { value: string; label: string }[],
+  current: string,
+) => {
+  const value = current.trim();
+  if (!value || options.some((option) => option.value === value)) {
+    return [...options];
+  }
+  return [{ value, label: value }, ...options];
+};
+
+const PET_ICON_OPTIONS: Record<string, { value: string; label: string }[]> = {
+  PetBanner1: [
+    { value: "Heart", label: "Heart" },
+    { value: "ShieldCheck", label: "Shield" },
+    { value: "UserCheck", label: "User check" },
+    { value: "User", label: "User" },
+    { value: "Home", label: "Home" },
+    { value: "PawPrint", label: "Paw" },
+  ],
+  PetHowItWorks1: [
+    { value: "User", label: "User" },
+    { value: "Clock", label: "Clock" },
+    { value: "Stethoscope", label: "Stethoscope" },
+    { value: "Utensils", label: "Utensils" },
+  ],
+  PetService1: [
+    { value: "Dog", label: "Dog" },
+    { value: "Star", label: "Star" },
+  ],
+  PetWhyChooseUs1: [
+    { value: "FaKitMedical", label: "Medical" },
+    { value: "FaShower", label: "Shower" },
+    { value: "FaScissors", label: "Scissors" },
+    { value: "FaStethoscope", label: "Stethoscope" },
+    { value: "FaShieldHeart", label: "Shield heart" },
+    { value: "FaHeartPulse", label: "Heart pulse" },
+    { value: "FaDog", label: "Dog" },
+  ],
+  PetPricing1: [
+    { value: "FaShower", label: "Shower" },
+    { value: "FaScissors", label: "Scissors" },
+    { value: "FaBroom", label: "Broom" },
+    { value: "FaCrown", label: "Crown" },
+    { value: "FaShieldAlt", label: "Shield" },
+    { value: "FaUserNurse", label: "Nurse" },
+    { value: "FaCalendarCheck", label: "Calendar" },
+    { value: "FaAward", label: "Award" },
+  ],
+  PetContactPage1: [
+    { value: "phone", label: "Phone" },
+    { value: "email", label: "Email" },
+    { value: "location", label: "Location" },
+    { value: "clock", label: "Clock" },
+    { value: "paw", label: "Paw" },
+  ],
+};
+
+const petIconsForVariant = (variant?: string) => {
+  if (variant && PET_ICON_OPTIONS[variant]) return PET_ICON_OPTIONS[variant];
+  const seen = new Set<string>();
+  return Object.values(PET_ICON_OPTIONS).flatMap((options) =>
+    options.filter((option) => {
+      if (seen.has(option.value)) return false;
+      seen.add(option.value);
+      return true;
+    }),
+  );
+};
+
 const GenericFieldEditor = ({
   fieldName,
   value,
@@ -2381,6 +2494,7 @@ const GenericFieldEditor = ({
   availablePageNames = [],
   contentVariant,
 }: GenericFieldEditorProps) => {
+  if (/^id$/i.test(fieldName)) return null;
   if (Array.isArray(value)) {
     return (
       <GenericArrayFieldEditor
@@ -2944,6 +3058,11 @@ const GenericFieldEditor = ({
   const isFormFieldType =
     fieldName === "type" && path.length >= 2 && path[0] === "formFields";
   const isFeatureIcon = isFeatureIconPath(path);
+  const petIconChoices =
+    contentVariant?.startsWith("Pet") &&
+    /^(icon|badgeIcon|iconName)$/i.test(fieldName)
+      ? withCurrentIconOption(petIconsForVariant(contentVariant), stringValue)
+      : null;
   const isWhyChooseUsIcon = isWhyChooseUsIconPath(path);
   const isProcessIcon = isProcessIconPath(path);
   const isMissionValueIcon = isMissionValueIconPath(path);
@@ -3008,6 +3127,19 @@ const GenericFieldEditor = ({
           <option value="tel">Phone</option>
           <option value="textarea">Textarea</option>
         </select>
+      ) : petIconChoices ? (
+        <select
+          value={stringValue || petIconChoices[0]?.value || ""}
+          onChange={(event) => onChange(path, event.target.value)}
+          className={contentFieldInputClass}
+          aria-label="Icon"
+        >
+          {petIconChoices.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
       ) : isFeatureIcon ? (
         <select
           value={stringValue || "location"}
@@ -3015,7 +3147,7 @@ const GenericFieldEditor = ({
           className={contentFieldInputClass}
           aria-label="Feature icon"
         >
-          {FEATURE_ICON_OPTIONS.map((option) => (
+          {withCurrentIconOption(FEATURE_ICON_OPTIONS, stringValue).map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}
             </option>
@@ -3028,7 +3160,7 @@ const GenericFieldEditor = ({
           className={contentFieldInputClass}
           aria-label="Why choose us icon"
         >
-          {WHY_CHOOSE_ICON_OPTIONS.map((option) => (
+          {withCurrentIconOption(WHY_CHOOSE_ICON_OPTIONS, stringValue).map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}
             </option>
@@ -3047,7 +3179,7 @@ const GenericFieldEditor = ({
           className={contentFieldInputClass}
           aria-label="Process step icon"
         >
-          {PROCESS_ICON_OPTIONS.map((option) => (
+          {withCurrentIconOption(PROCESS_ICON_OPTIONS, stringValue).map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}
             </option>
@@ -3071,13 +3203,15 @@ const GenericFieldEditor = ({
           className={contentFieldInputClass}
           aria-label="Icon"
         >
-          {stringValue &&
-            !PLUMBING_ICON_NAMES.includes(stringValue.trim().toLowerCase()) ? (
-            <option value={stringValue}>{stringValue}</option>
-          ) : null}
-          {PLUMBING_ICON_NAMES.map((name) => (
-            <option key={name} value={name}>
-              {name.replace(/-/g, " ")}
+          {withCurrentIconOption(
+            PLUMBING_ICON_NAMES.map((name) => ({
+              value: name,
+              label: name.replace(/-/g, " "),
+            })),
+            stringValue.trim().toLowerCase(),
+          ).map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
             </option>
           ))}
         </select>
@@ -3088,7 +3222,7 @@ const GenericFieldEditor = ({
           className={contentFieldInputClass}
           aria-label="Button icon"
         >
-          {BUTTON_ICON_OPTIONS.map((option) => (
+          {withCurrentIconOption(BUTTON_ICON_OPTIONS, stringValue).map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}
             </option>
@@ -3551,6 +3685,11 @@ export default function EditSectionModal({
     | undefined;
   const activeGenericData = (currentSection?.data?.[activeVariant] ??
     fallbackVariantData) as SectionData | undefined;
+  const petBannerSlides =
+    activeVariant === "PetBanner1"
+      ? resolvePetBannerSlides(activeGenericData as Record<string, unknown> | undefined)
+      : [];
+  const petBannerSlideAccordion = useContentAccordion(petBannerSlides.length);
   const bannerSlideAccordion = useContentAccordion(
     (activeBannerData?.bannerSlides ?? []).length,
   );
@@ -3589,9 +3728,28 @@ export default function EditSectionModal({
     );
   };
   const visibleGenericContentEntries = (() => {
-    const entries = Object.entries(editableGenericData ?? {}).filter(
-      ([field]) => isContentFieldVisible(field),
-    );
+    const source: Record<string, unknown> = {
+      ...(activeVariant === "PetHowItWorks1"
+        ? (petDefaultSite.howItWorks as Record<string, unknown>)
+        : {}),
+      ...(activeVariant === "PetService1"
+        ? (petDefaultSite.ourServices as Record<string, unknown>)
+        : {}),
+      ...(editableGenericData ?? {}),
+    };
+    const entries = Object.entries(source).filter(([field]) => {
+      if (/^id$/i.test(field)) return false;
+      if (
+        (activeVariant === "PetAbout1" || activeVariant === "PetAboutPage1") &&
+        field === "desc"
+      ) {
+        return false;
+      }
+      if (activeVariant === "PetWhyChooseUs1" && field === "features") {
+        return false;
+      }
+      return isContentFieldVisible(field);
+    });
     if (activeVariant === "PlumbingWhyChooseUs1") {
       return sortObjectEntriesByPreferredOrder(entries, [
         "badge",
@@ -4723,6 +4881,15 @@ export default function EditSectionModal({
         ...baseGenericData,
         ...newData,
       },
+    });
+  };
+
+  const updatePetBannerSlide = (path: GenericFieldPath, value: unknown) => {
+    const slides = resolvePetBannerSlides(
+      activeGenericData as Record<string, unknown> | undefined,
+    ).map((slide) => ({ ...slide }));
+    updateActiveGenericData({
+      slides: setValueAtPath(slides, path.slice(1), value),
     });
   };
 
@@ -6809,6 +6976,64 @@ export default function EditSectionModal({
             {activeSectionType === "Banner" &&
               activeTab === "Banner Content" && (
                 <div className="space-y-4">
+                  {petBannerSlides.length > 0 && (
+                    <div className="space-y-3">
+                      {petBannerSlides.map((slide, index) => {
+                        const slideFields = PET_BANNER_SLIDE_FIELDS.filter(
+                          (key) => key in slide,
+                        );
+                        const summary =
+                          (typeof slide.titleHighlight === "string" &&
+                            slide.titleHighlight) ||
+                          (typeof slide.badge === "string" && slide.badge) ||
+                          undefined;
+
+                        return (
+                          <ContentAccordionItem
+                            key={String(slide.id ?? index)}
+                            title={`Banner Slide ${index + 1}`}
+                            summary={summary}
+                            open={petBannerSlideAccordion.expandedIndex === index}
+                            onToggle={() =>
+                              petBannerSlideAccordion.toggleIndex(index)
+                            }
+                            itemRef={(node) =>
+                              petBannerSlideAccordion.setItemRef(index, node)
+                            }
+                          >
+                            {slideFields.map((key) => (
+                              <GenericFieldEditor
+                                key={key}
+                                fieldName={key}
+                                value={slide[key]}
+                                path={["slides", index, key]}
+                                sectionType={activeSectionType}
+                                contentVariant={activeVariant}
+                                onChange={updatePetBannerSlide}
+                                onMediaChange={(path, fieldName, file) => {
+                                  const mediaKind =
+                                    getMediaKindFromKey(fieldName) ?? "image";
+                                  showBannerGenerationLoader(mediaKind);
+                                  readBannerBackgroundFile(file, (dataUrl) => {
+                                    updatePetBannerSlide(path, dataUrl);
+                                  });
+                                }}
+                                onImagePickerRequest={(path, fieldName, currentValue) =>
+                                  openImagePicker(
+                                    formatFieldLabel(fieldName),
+                                    currentValue,
+                                    (source) => updatePetBannerSlide(path, source),
+                                  )
+                                }
+                                onOpenHrefPicker={openGenericHrefPicker}
+                                availablePageNames={availablePageNames}
+                              />
+                            ))}
+                          </ContentAccordionItem>
+                        );
+                      })}
+                    </div>
+                  )}
                   {activeVariant === "PlumbingBanner1" &&
                     (
                       [
@@ -8279,6 +8504,7 @@ export default function EditSectionModal({
               "WhyChooseUs",
               "Features",
               "HowWeWork",
+              "HowItWorks",
               "Blog",
               "Footer",
               "FeaturedDev",
@@ -8778,7 +9004,24 @@ export default function EditSectionModal({
             {activeTab.endsWith("Content") &&
               activeSectionType !== "Topbar" &&
               activeSectionType !== "Header" &&
-              automaticContentFields.length > 0 && (
+              automaticContentFields.filter((field) => {
+                if (petBannerSlides.length === 0) return true;
+                const root = String(field.path[0] ?? "");
+                return ![
+                  "slides",
+                  "badge",
+                  "titlePrefix",
+                  "titleHighlight",
+                  "titleSuffix",
+                  "description",
+                  "bgImage",
+                  "bgImages",
+                  "primaryBtnText",
+                  "primaryBtnLink",
+                  "secondaryBtnText",
+                  "secondaryBtnLink",
+                ].includes(root);
+              }).length > 0 && (
                 <section className={`${contentFieldCardClass} space-y-3.5`}>
                   <div>
                     <h4 className="text-xs font-semibold text-slate-800">
@@ -8788,7 +9031,24 @@ export default function EditSectionModal({
                       Extra fields for this section layout.
                     </p>
                   </div>
-                  {automaticContentFields.map((field) => (
+                  {automaticContentFields.filter((field) => {
+                    if (petBannerSlides.length === 0) return true;
+                    const root = String(field.path[0] ?? "");
+                    return ![
+                      "slides",
+                      "badge",
+                      "titlePrefix",
+                      "titleHighlight",
+                      "titleSuffix",
+                      "description",
+                      "bgImage",
+                      "bgImages",
+                      "primaryBtnText",
+                      "primaryBtnLink",
+                      "secondaryBtnText",
+                      "secondaryBtnLink",
+                    ].includes(root);
+                  }).map((field) => (
                     <div key={field.path.join(".")} className="pt-0.5">
                       <GenericFieldEditor
                         fieldName={field.fieldName}

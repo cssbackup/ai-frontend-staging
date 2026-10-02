@@ -3,9 +3,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const appDir = path.dirname(fileURLToPath(import.meta.url));
-// Git root (the parent of `frontend`). On Vercel this is /vercel/path0.
-// turbopack.root and outputFileTracingRoot must be the same directory.
-const monorepoRoot = path.resolve(appDir, "..");
+// Keep both roots on this app. Pointing them at the repo parent makes
+// Turbopack look for dependencies outside frontend/node_modules.
 
 const nextConfig: NextConfig = {
   // Hide Next.js "N" badge while running next dev on EC2.
@@ -23,10 +22,10 @@ const nextConfig: NextConfig = {
     "http://13.201.222.98",
     "http://13.201.222.90",
   ],
-  outputFileTracingRoot: monorepoRoot,
+  outputFileTracingRoot: appDir,
   serverExternalPackages: ["playwright", "@prisma/client", "prisma"],
   turbopack: {
-    root: monorepoRoot,
+    root: appDir,
   },
   async redirects() {
     return [

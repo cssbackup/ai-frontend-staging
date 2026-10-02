@@ -321,43 +321,6 @@ export default function Templatepreview({
                         title={item.title}
                       />
 
-                      <div className="pointer-events-none absolute inset-2.5 z-10 overflow-hidden rounded-[14px]">
-                        <div className="absolute inset-0 bg-[#08132f]/70 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                        <div className="absolute inset-0 flex items-center justify-center p-3">
-                          <div className="pointer-events-auto flex translate-y-2 scale-[0.98] items-center gap-1.5 rounded-2xl border border-white/55 bg-white/22 p-1.5 opacity-0 shadow-[0_14px_32px_rgba(8,19,47,0.28)] backdrop-blur-md transition-all duration-300 ease-out group-hover:translate-y-0 group-hover:scale-100 group-hover:opacity-100">
-                            <button
-                              type="button"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                openViewPreview(item);
-                              }}
-                              className="inline-flex h-10 items-center gap-2 rounded-xl bg-white px-4 text-[12px] font-semibold text-[#08132f] shadow-sm transition hover:bg-slate-50 active:scale-[0.97]"
-                              aria-label={`View ${item.title}`}
-                            >
-                              <span className="grid size-6 place-items-center rounded-lg bg-slate-100 text-[#08132f]">
-                                <Eye size={14} strokeWidth={2.2} />
-                              </span>
-                              View
-                            </button>
-                            <button
-                              type="button"
-                              disabled={openingEditor}
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                handleUseTemplate(item);
-                              }}
-                              className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#315ff4] px-4 text-[12px] font-semibold text-white shadow-[0_6px_16px_rgba(49,95,244,0.4)] transition hover:bg-[#244fe0] active:scale-[0.97] disabled:cursor-wait disabled:opacity-70"
-                              aria-label={`Use ${item.title}`}
-                            >
-                              <span className="grid size-6 place-items-center rounded-lg bg-white/20 text-white">
-                                <CheckCircle2 size={14} strokeWidth={2.2} />
-                              </span>
-                              Use theme
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-
                       {isActive ? (
                         <span className="absolute left-4 top-4 z-20 inline-flex items-center gap-1 rounded-full bg-[#315ff4] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-lg">
                           <Check size={11} strokeWidth={3} />
@@ -391,6 +354,43 @@ export default function Templatepreview({
                         </span>
                       </div>
                     </div>
+
+                    <div className="pointer-events-none absolute inset-0 z-10 overflow-hidden rounded-2xl">
+                      <div className="absolute inset-0 bg-[#08132f]/70 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                      <div className="absolute inset-0 flex items-center justify-center p-3">
+                        <div className="pointer-events-auto flex translate-y-2 scale-[0.98] items-center gap-1.5 rounded-2xl border border-white/55 bg-white/22 p-1.5 opacity-0 shadow-[0_14px_32px_rgba(8,19,47,0.28)] backdrop-blur-md transition-all duration-300 ease-out group-hover:translate-y-0 group-hover:scale-100 group-hover:opacity-100">
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                openViewPreview(item);
+                              }}
+                              className="inline-flex h-10 items-center gap-2 rounded-xl bg-white px-4 text-[12px] font-semibold text-[#08132f] shadow-sm transition hover:bg-slate-50 active:scale-[0.97]"
+                              aria-label={`View ${item.title}`}
+                            >
+                              <span className="grid size-6 place-items-center rounded-lg bg-slate-100 text-[#08132f]">
+                                <Eye size={14} strokeWidth={2.2} />
+                              </span>
+                              View
+                            </button>
+                            <button
+                              type="button"
+                              disabled={openingEditor}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                handleUseTemplate(item);
+                              }}
+                              className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#315ff4] px-4 text-[12px] font-semibold text-white shadow-[0_6px_16px_rgba(49,95,244,0.4)] transition hover:bg-[#244fe0] active:scale-[0.97] disabled:cursor-wait disabled:opacity-70"
+                              aria-label={`Use ${item.title}`}
+                            >
+                              <span className="grid size-6 place-items-center rounded-lg bg-white/20 text-white">
+                                <CheckCircle2 size={14} strokeWidth={2.2} />
+                              </span>
+                              Use theme
+                            </button>
+                          </div>
+                        </div>
+                      </div>
                   </article>
                 );
               })}

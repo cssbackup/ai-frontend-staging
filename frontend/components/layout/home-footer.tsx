@@ -12,6 +12,7 @@ export const footerCompanyLinks = [
   ["Pricing", "/pricing"],
   ["Cookie Policy", "/cookie-policy"],
   ["Terms of Service", "/terms"],
+  ["Contact us", "/contact-us"],
 ] as const;
 
 export const footerLegalLinks = [
