@@ -1,15 +1,14 @@
 "use client";
 
 import type { SectionProps } from "../../../types/section";
-import PetFrame from "../pet/PetFrame";
-import { mergePetSite, PetSiteProvider } from "../pet/petSite";
-import SubBanner from "../pet/views/ui/subbanner";
-import Services from "../pet/views/homelayout/services";
+import PetFrame from "../data/pet/PetFrame";
+import { mergePetSite, PetSiteProvider } from "../data/pet/petSite";
+import SubBanner from "../banner/PetSubBanner";
+import Services from "./PetServicesView";
 import ServicePage from "./ServicePage";
 
 const servicePageData = (data: SectionProps["data"]) => {
   if (!data) return data;
-  if (Array.isArray(data.productItems) && data.productItems.length) return data;
   const services = (data as { services?: unknown }).services;
   if (!Array.isArray(services) || !services.length) return data;
   const productItems = services.flatMap((item) => {
@@ -42,8 +41,21 @@ const servicePageData = (data: SectionProps["data"]) => {
 
 export default function PetServicePage1({ data }: SectionProps) {
   const layout = typeof data?.layout === "string" ? data.layout : "";
-  if (/^ServicePage-[1-4]$/.test(layout)) {
-    return <ServicePage data={servicePageData(data)} />;
+  const keepsPetServices = Array.isArray(
+    (data as { services?: unknown } | undefined)?.services,
+  );
+  if (/^ServicePage-[1-4]$/.test(layout) && !keepsPetServices) {
+    const site = mergePetSite(data as Record<string, unknown> | undefined, "ourServices");
+    return (
+      <PetSiteProvider value={site}>
+        <PetFrame>
+          <main className="w-full min-h-screen">
+            <SubBanner pageKey="services" />
+            <ServicePage data={servicePageData(data)} />
+          </main>
+        </PetFrame>
+      </PetSiteProvider>
+    );
   }
   const site = mergePetSite(data as Record<string, unknown> | undefined, "ourServices" || undefined);
   return (

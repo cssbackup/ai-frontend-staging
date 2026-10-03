@@ -45,7 +45,7 @@ import {
   applyTopbarLayoutSkins,
 } from "./src/data/templateFlow";
 import { sectionRegistry } from "./src/lib/sectionRegistry";
-import { site as petDefaultSite } from "./src/components/sections/pet/petDefaults";
+import { site as petDefaultSite } from "./src/components/sections/data/pet/petDefaults";
 import {
   INLINE_TEXT_FORMATS_KEY,
   readInlineTextFormats,
@@ -254,6 +254,7 @@ const getEditorSectionDisplayLabel = (section: {
   variant?: string;
   data?: SectionItem["data"];
 }) => {
+  if (section.variant === "PetAboutPage1") return "About";
   if (section.variant?.startsWith("AboutPage")) return "About Story";
   if (section.type === "CTA") return "Call to action";
   if (section.type === "MissionPage") return "How we work";
@@ -272,6 +273,9 @@ const getEditorSectionDisplayLabel = (section: {
     if (name) return name;
     return "Custom";
   }
+  if (section.type === "HowItWorks") return "How it works";
+  if (section.type === "WhyChooseUs") return "Why choose us";
+  if (section.type === "Team") return "Team";
   return section.type;
 };
 
@@ -2211,6 +2215,49 @@ const alignTemplatePageSections = (
   })));
 };
 
+const expandPetAboutPageSections = (sections: SectionItem[]): SectionItem[] => {
+  let changed = false;
+  const next = sections.flatMap((section) => {
+    if (section.variant !== "PetAboutPage1") return [section];
+    const aboutData = (section.data?.PetAboutPage1 ?? {}) as Record<string, unknown>;
+    if (aboutData.petAboutSplit) return [section];
+    const page = normalizePageSlug(section.page || "about");
+    const hasWorks = sections.some(
+      (item) =>
+        item.variant === "PetHowItWorks1" &&
+        normalizePageSlug(item.page || "") === page,
+    );
+    const marked = {
+      ...section,
+      data: {
+        ...section.data,
+        PetAboutPage1: { ...aboutData, petAboutSplit: true },
+      },
+    };
+    if (hasWorks) {
+      changed = true;
+      return [marked];
+    }
+    changed = true;
+    const blocks = [
+      { type: "HowItWorks", variant: "PetHowItWorks1" },
+      { type: "Team", variant: "PetTeam1" },
+      { type: "WhyChooseUs", variant: "PetWhyChooseUs1" },
+    ];
+    return [
+      marked,
+      ...blocks.map((block) => ({
+        id: `${block.type}-${page}`,
+        page: section.page || "about",
+        type: block.type,
+        variant: block.variant,
+        data: { [block.variant]: {} },
+      })),
+    ];
+  });
+  return changed ? next : sections;
+};
+
 const ensureMissingAboutPageCompanions = (
   sections: SectionItem[],
   templateId: string,
@@ -2236,8 +2283,9 @@ const ensureMissingAboutPageCompanions = (
       );
     });
     if (bodyIndex === -1) return;
-
     const body = next[bodyIndex];
+    if (String(body.variant || "").startsWith("Pet")) return;
+
     const pageBodyData = (body.data?.[body.variant] ?? {}) as Record<
       string,
       unknown
@@ -2522,7 +2570,7 @@ const ensureMissingPageBreadcrumbs = (
     changed = true;
   });
   return ensureMissingAboutPageCompanions(
-    changed ? next : sections,
+    expandPetAboutPageSections(changed ? next : sections),
     templateId,
     category,
   );
@@ -4077,8 +4125,13 @@ const buildTeamPageState = (data: SectionData): TeamPageState => ({
 });
 
 const readGalleryItemsFromData = (data: SectionData): GalleryItem[] => {
-  if (Array.isArray(data.galleryItems)) {
-    return data.galleryItems
+  const source = Array.isArray(data.galleryItems)
+    ? data.galleryItems
+    : Array.isArray(data.items)
+      ? data.items
+      : null;
+  if (source) {
+    return source
       .map((item, index) => ({
         id:
           (typeof item.id === "string" && item.id) ||
@@ -4102,11 +4155,15 @@ const buildGalleryPageState = (data: SectionData): GalleryPageState => ({
   title:
     typeof data.title === "string"
       ? data.title
-      : "Moments worth sharing",
+      : [data.titlePrefix, data.titleHighlight].filter(
+          (part) => typeof part === "string" && part.trim(),
+        ).join(" ") || "Moments worth sharing",
   desc:
     typeof data.desc === "string"
       ? data.desc
-      : "Browse photos and visuals from our work, events, and community.",
+      : typeof data.description === "string"
+        ? data.description
+        : "Browse photos and visuals from our work, events, and community.",
   layout:
     typeof data.layout === "string" && data.layout.startsWith("GalleryPage-")
       ? data.layout
@@ -4131,7 +4188,7 @@ const applyGalleryPageStateToData = (
     order: item.order ?? 1,
     active: item.active !== false,
   }));
-  return {
+  const next: SectionData = {
     ...current,
     pretitle: state.pretitle,
     title: state.title,
@@ -4139,6 +4196,19 @@ const applyGalleryPageStateToData = (
     layout: state.layout,
     galleryItems,
   };
+  if (Array.isArray(current.items)) {
+    next.items = galleryItems.map((item) => ({
+      id: item.id,
+      title: item.title,
+      category: item.category || "Gallery",
+      desc: item.desc,
+      image: item.image || "/bg1.jpg",
+      alt: item.alt || item.title,
+      order: item.order ?? 1,
+      active: item.active !== false,
+    }));
+  }
+  return next;
 };
 
 const readCountriesServeItemsFromData = (
@@ -7693,6 +7763,9 @@ function EditorPage({
     );
   }, [category, templateId]);
   useEffect(() => {
+    setSections((current) => expandPetAboutPageSections(current));
+  }, [sections]);
+  useEffect(() => {
     if (!Array.isArray(sections) || !sections.length) return;
     const template = getBuilderTemplate(templateId, category);
     const onboarding = isRedesignOpen
@@ -8230,23 +8303,67 @@ function EditorPage({
             (pageSlug === "service" ||
               pageSlug === "services" ||
               section.type === "ServicePage" ||
-              section.id === "ServicePage") &&
-            /^ServicePage-[1-4]$/.test(requestedLayout)
+              section.id === "ServicePage")
           ) {
             const variant = "PetServicePage1";
             const currentData =
               (section.data?.[variant] as SectionData | undefined) ??
               (section.data?.[section.variant] as SectionData | undefined) ??
               ({} as SectionData);
+            const existing = Array.isArray(currentData.services)
+              ? currentData.services
+              : [];
+            const services = [...detail.services]
+              .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+              .map((service, index) => {
+                const previous =
+                  existing.find(
+                    (item) =>
+                      item &&
+                      typeof item === "object" &&
+                      "id" in item &&
+                      item.id === service.id,
+                  ) || existing[index];
+                const previousRecord =
+                  previous && typeof previous === "object"
+                    ? (previous as Record<string, unknown>)
+                    : {};
+                return {
+                  ...previousRecord,
+                  id: service.id,
+                  title: service.title,
+                  description: service.desc,
+                  image: service.image,
+                  order: service.order ?? index + 1,
+                  active: service.active !== false,
+                  link:
+                    (typeof previousRecord.link === "string" &&
+                      previousRecord.link) ||
+                    `/${service.slug || createPageSlug(service.title) || service.id}`,
+                };
+              });
+            const { layout: _ignoredLayout, ...rest } = currentData;
+            const productItems = services.map((service) => ({
+              id: service.id,
+              title: service.title,
+              desc: service.description,
+              image: service.image,
+              alt: service.title,
+              category: "Service",
+              link: service.link,
+              active: service.active !== false,
+              order: service.order,
+            }));
             return {
               ...section,
               variant,
               data: {
                 ...section.data,
-                [variant]: applyServicePageStateToData(currentData, {
-                  ...detail,
-                  layout: requestedLayout,
-                }),
+                [variant]: {
+                  ...rest,
+                  services,
+                  productItems,
+                },
               },
             };
           }
@@ -8289,6 +8406,17 @@ function EditorPage({
                     `/${service.slug || createPageSlug(service.title) || service.id}`,
                 };
               });
+            const productItems = services.map((service) => ({
+              id: service.id,
+              title: service.title,
+              desc: service.description,
+              image: service.image,
+              alt: service.title,
+              category: "Service",
+              link: service.link,
+              active: service.active !== false,
+              order: service.order,
+            }));
             return {
               ...section,
               data: {
@@ -8296,6 +8424,7 @@ function EditorPage({
                 [variant]: {
                   ...currentData,
                   services,
+                  productItems,
                 },
               },
             };
@@ -8655,20 +8784,9 @@ function EditorPage({
         const withSection = addTeamPageSection(current, category);
         const next = withSection.map((section) => {
           const teamPageSlug = normalizePageSlug(section.page || "");
-          const isPetTeam =
-            section.variant === "PetTeam1" || Boolean(section.data?.PetTeam1);
-          const requestedTeamLayout =
-            typeof detail.layout === "string" ? detail.layout : "";
-          const applyTeamListingLayout =
-            (teamPageSlug === "team" || teamPageSlug === "teams") &&
-            /^TeamPage-[1-4]$/.test(requestedTeamLayout) &&
-            !(
-              section.variant === "PetTeam1" &&
-              requestedTeamLayout === "TeamPage-1"
-            );
-          if (isPetTeam && !applyTeamListingLayout) {
-            const variant =
-              section.variant === "PetTeam1" ? "PetTeam1" : section.variant;
+          const isPetTeam = section.variant?.startsWith("Pet") === true;
+          if (isPetTeam && section.variant) {
+            const variant = section.variant;
             const currentData =
               (section.data?.[variant] as SectionData | undefined) ??
               (section.data?.PetTeam1 as SectionData | undefined) ??
@@ -8868,8 +8986,9 @@ function EditorPage({
           }
 
           const currentVariant = section.variant || "GalleryPage-1";
-          const nextVariant =
-            detail.layout && /^GalleryPage-[1-5]$/.test(detail.layout)
+          const nextVariant = currentVariant.startsWith("Pet")
+            ? currentVariant
+            : detail.layout && /^GalleryPage-[1-5]$/.test(detail.layout)
               ? detail.layout
               : currentVariant;
           const currentData =
@@ -16404,15 +16523,44 @@ function EditorPage({
     });
     return shell;
   })();
-  const visibleSections =
-    orderChromeSections(
-      isViewingBlogIndex || masterDetailView
-        ? visibleSectionsWithCountryBreadcrumb
-        : placeCountriesServeBeforeFooter(
-            visibleSectionsRaw,
-            countriesServeSection,
-          ),
+  const orderedSections = orderChromeSections(
+    isViewingBlogIndex || masterDetailView
+      ? visibleSectionsWithCountryBreadcrumb
+      : placeCountriesServeBeforeFooter(
+          visibleSectionsRaw,
+          countriesServeSection,
+        ),
+  );
+  const visibleSections = (() => {
+    if (!petTheme || !currentPageSlug || currentPageSlug === "home") {
+      return orderedSections;
+    }
+    if (isViewingBlogIndex || masterDetailView) return orderedSections;
+    const alreadyHasBanner = orderedSections.some(
+      (section) =>
+        section.variant === "PetSubBanner1" ||
+        pageBodyHasOwnBreadcrumb(section.variant) ||
+        pageBodyHasOwnBreadcrumb(
+          resolveTemplateSectionVariant(section, editorTemplate),
+        ),
     );
+    if (alreadyHasBanner) return orderedSections;
+    const banner = {
+      id: `PageBanner-${currentPageSlug}`,
+      type: "PageBanner",
+      variant: "PetSubBanner1",
+      page: currentPageSlug,
+      data: {
+        PetSubBanner1: { pageKey: currentPageSlug },
+      },
+    };
+    const headerIndex = orderedSections.findIndex(
+      (section) => section.type === "Header",
+    );
+    const next = [...orderedSections];
+    next.splice(headerIndex + 1, 0, banner as (typeof orderedSections)[number]);
+    return next;
+  })();
   const blogIndexPosts = useMemo(() => {
     if (!isViewingBlogIndex) return [];
     return flattenPageLinks(pageLinks)

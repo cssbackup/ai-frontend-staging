@@ -2,12 +2,12 @@
 
 import type { SectionProps } from "../../../types/section";
 import { useOptionalPreview } from "../../context/PreviewContext";
-import { editorSlug } from "../pet/editorSlug";
-import PetFrame from "../pet/PetFrame";
-import { mergePetSite, PetSiteProvider, usePetSite } from "../pet/petSite";
-import SubBanner from "../pet/views/ui/subbanner";
-import BlogContent from "../pet/views/layout/blogdetails/blogcontent";
-import BlogSidebar from "../pet/views/layout/blogdetails/blogsidebar";
+import { editorSlug } from "../data/pet/editorSlug";
+import PetFrame from "../data/pet/PetFrame";
+import { mergePetSite, PetSiteProvider, usePetSite } from "../data/pet/petSite";
+import SubBanner from "../banner/PetSubBanner";
+import BlogContent from "./PetBlogContent";
+import BlogSidebar from "./PetBlogSidebar";
 
 function PetDetailBody() {
   const site = usePetSite();

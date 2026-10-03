@@ -39,7 +39,7 @@ import {
   X,
 } from "lucide-react";
 import { site as plumbingSite } from "../sections/data/plumbing1";
-import { site as petDefaultSite } from "../sections/pet/petDefaults";
+import { site as petDefaultSite } from "../sections/data/pet/petDefaults";
 import { agrandirBolt, generalSansMedium } from "@/app/fonts";
 import {
   BannerSlideData,
@@ -638,6 +638,89 @@ const filterPendingNavLinks = (links: PageLink[]): PageLink[] =>
       },
     ];
   });
+
+const resolveHeaderLogoDisplay = (data?: {
+  logo?: unknown;
+  logoDisplay?: string;
+  logoImage?: string;
+}): "text" | "image" | "both" => {
+  if (
+    data?.logoDisplay === "image" ||
+    data?.logoDisplay === "text" ||
+    data?.logoDisplay === "both"
+  ) {
+    return data.logoDisplay;
+  }
+  const logo = data?.logo;
+  const objectSrc =
+    logo &&
+    typeof logo === "object" &&
+    typeof (logo as { src?: unknown }).src === "string"
+      ? (logo as { src: string }).src.trim()
+      : "";
+  const hasText = typeof logo === "string" && logo.trim().length > 0;
+  const hasImage = Boolean(data?.logoImage || objectSrc);
+  if (hasText && hasImage) return "both";
+  if (hasImage) return "image";
+  return "text";
+};
+
+const PET_EDITOR_SLICE: Record<string, string> = {
+  PetAboutPage1: "about",
+  PetHowItWorks1: "howItWorks",
+  PetService1: "ourServices",
+  PetServicePage1: "ourServices",
+  PetFaq1: "faqSec",
+  PetPricing1: "pricingSec",
+  PetTeamPage1: "ourTeam",
+  PetTeamDetails1: "teamDetails",
+  PetGallery1: "gallerySec",
+  PetBlogPage1: "blogSec",
+  PetContactPage1: "contactSec",
+  PetAppointment1: "appointmentSec",
+  PetTestimonialPage1: "testimonialSec",
+  PetPartners1: "partnerSec",
+  PetMissionPage1: "missionSec",
+};
+
+const PET_SUBBANNER_KEY: Record<string, string> = {
+  PetAboutPage1: "about",
+  PetFaq1: "faq",
+  PetPricing1: "pricing",
+  PetGallery1: "gallery",
+  PetServicePage1: "services",
+  PetTeamPage1: "ourteam",
+  PetBlogPage1: "blog",
+  PetContactPage1: "contact",
+  PetAppointment1: "appointment",
+  PetTestimonialPage1: "testimonial",
+  PetPartners1: "partners",
+  PetMissionPage1: "mission",
+};
+
+const petEditorSlice = (variant: string) => {
+  const key = PET_EDITOR_SLICE[variant];
+  if (!key) return null;
+  const slice = (petDefaultSite as Record<string, unknown>)[key];
+  return slice && typeof slice === "object" ? (slice as Record<string, unknown>) : null;
+};
+
+const petPageBannerSeed = (variant: string) => {
+  const key = PET_SUBBANNER_KEY[variant];
+  if (!key) return null;
+  const banners = (petDefaultSite as { subBanners?: Record<string, unknown> }).subBanners;
+  const banner = banners?.[key];
+  if (banner && typeof banner === "object") return banner;
+  const fallback = banners?.about as { bgImage?: string } | undefined;
+  return {
+    title: key === "ourteam" ? "Our Team" : key,
+    bgImage: fallback?.bgImage || "",
+    breadcrumbs: [
+      { label: "Home", href: "/" },
+      { label: key === "ourteam" ? "Our Team" : key, active: true },
+    ],
+  };
+};
 
 const toPageLinks = (menu: MenuItem[], limit = MAX_MENU_LINKS): PageLink[] =>
   menu.slice(0, limit).map((item) => ({
@@ -3524,6 +3607,7 @@ export default function EditSectionModal({
     modalX: number;
     modalY: number;
   } | null>(null);
+  const dragRef = useRef(dragStart);
   const [bannerGenerationType, setBannerGenerationType] = useState<
     "image" | "video" | null
   >(null);
@@ -3551,12 +3635,17 @@ export default function EditSectionModal({
     Object.values(currentSection?.data ?? {})[0];
   const visibleSidebarItems =
     sidebarItemsBySection[activeSectionType] ??
-    (activeVariant.startsWith("Plumbing")
+    (activeVariant.startsWith("Plumbing") || activeVariant.startsWith("Pet")
       ? [`${activeSectionType} Content`]
       : []);
 
   useEffect(() => {
-    if (!activeVariant.startsWith("Plumbing")) return;
+    if (
+      !activeVariant.startsWith("Plumbing") &&
+      !activeVariant.startsWith("Pet")
+    ) {
+      return;
+    }
     if (sidebarItemsBySection[activeSectionType]?.length) return;
     setActiveTab(`${activeSectionType} Content`);
   }, [sectionId, activeVariant, activeSectionType]);
@@ -3629,6 +3718,7 @@ export default function EditSectionModal({
     (activeSectionType === "Header" ? fallbackVariantData : undefined)) as
     | {
       logo?: string;
+      logoDisplay?: "text" | "image" | "both";
       logoImage?: string;
       logoImageTitle?: string;
       headerBackgroundType?: HeaderBackgroundType;
@@ -3728,20 +3818,33 @@ export default function EditSectionModal({
     );
   };
   const visibleGenericContentEntries = (() => {
+    const pageBanner = petPageBannerSeed(activeVariant);
+    const savedRecord = (editableGenericData ?? {}) as Record<string, unknown>;
+    const savedBanner =
+      savedRecord.pageBanner && typeof savedRecord.pageBanner === "object"
+        ? (savedRecord.pageBanner as Record<string, unknown>)
+        : undefined;
+    const { pageBanner: _savedPageBanner, ...savedWithoutBanner } = savedRecord;
     const source: Record<string, unknown> = {
-      ...(activeVariant === "PetHowItWorks1"
-        ? (petDefaultSite.howItWorks as Record<string, unknown>)
+      ...(pageBanner
+        ? {
+            pageBanner: {
+              ...(pageBanner as Record<string, unknown>),
+              ...(savedBanner ?? {}),
+            },
+          }
         : {}),
-      ...(activeVariant === "PetService1"
-        ? (petDefaultSite.ourServices as Record<string, unknown>)
-        : {}),
-      ...(editableGenericData ?? {}),
+      ...(petEditorSlice(activeVariant) ?? {}),
+      ...savedWithoutBanner,
     };
     const entries = Object.entries(source).filter(([field]) => {
       if (/^id$/i.test(field)) return false;
       if (
         (activeVariant === "PetAbout1" || activeVariant === "PetAboutPage1") &&
-        field === "desc"
+        (field === "desc" ||
+          field === "desc1" ||
+          field === "desc2" ||
+          field === "petAboutSplit")
       ) {
         return false;
       }
@@ -4095,12 +4198,38 @@ export default function EditSectionModal({
     Array.isArray(items) &&
     items.some((item) => Array.isArray(item.children) && item.children.length > 0);
   const designedPlumbingNav = (plumbingSite.header?.nav ?? []) as MenuItem[];
+  const petNavLinks = (
+    activeHeaderData as { navLinks?: MenuItem[] } | undefined
+  )?.navLinks;
+  const petMenuSource = Array.isArray(activeHeaderData?.menu)
+    ? activeHeaderData.menu
+    : Array.isArray(petNavLinks)
+      ? petNavLinks
+      : [];
+  const petDesignMenu: MenuItem[] = [
+    { id: "home", label: "Home", href: "/", menuType: "link" },
+    { id: "about", label: "About Us", href: "/about", menuType: "link" },
+    { id: "services", label: "Services", href: "/services", menuType: "link" },
+    { id: "blog", label: "Blog", href: "/blog", menuType: "link" },
+    { id: "gallery", label: "Gallery", href: "/gallery", menuType: "link" },
+  ];
+  const petSiteMenu = petMenuSource
+    .filter((item) => item?.label)
+    .map((item) => ({
+      ...item,
+      menuType: "link" as const,
+      children: undefined,
+    }));
   const menuItems = activeVariant.startsWith("Plumbing")
     ? menuHasDropdown(plumbingNavItems)
       ? plumbingNavItems
       : menuHasDropdown(activeHeaderData?.menu)
         ? activeHeaderData.menu
         : designedPlumbingNav
+    : activeVariant.startsWith("Pet")
+      ? petSiteMenu.length > 0 && petSiteMenu.length <= 6
+        ? petSiteMenu
+        : petDesignMenu
     : (activeHeaderData?.menu ??
       (Array.isArray(plumbingNavItems) ? plumbingNavItems : []));
   const navSectionOptions = useMemo(() => {
@@ -4427,7 +4556,7 @@ export default function EditSectionModal({
     activeVariant === "Banner-1" ||
     activeVariant === "Banner-2";
 
-  const activeFooterData = (currentSection?.data?.[activeVariant] ??
+  const rawFooterData = (currentSection?.data?.[activeVariant] ??
     (activeSectionType === "Footer" ? fallbackVariantData : undefined)) as
     | {
       logo?: string;
@@ -4438,6 +4567,9 @@ export default function EditSectionModal({
         hidden?: boolean;
         links: { label: string; href: string; hidden?: boolean }[];
       }[];
+      quickLinks?: { title?: string; links?: { label?: string; href?: string }[] };
+      ourCauses?: { title?: string; links?: { label?: string; href?: string }[] };
+      usefullinks?: { title?: string; links?: { label?: string; href?: string }[] };
       footerBackgroundType?: FooterBackgroundType;
       footerBackgroundColor?: string;
       footerGradientColor?: string;
@@ -4447,6 +4579,30 @@ export default function EditSectionModal({
       floatingItems?: FloatingItemData[];
     }
     | undefined;
+  const activeFooterData = (() => {
+    if (!activeVariant.startsWith("Pet") || !rawFooterData && activeSectionType !== "Footer") {
+      return rawFooterData;
+    }
+    if (!activeVariant.startsWith("Pet")) return rawFooterData;
+    const defaults = (petDefaultSite.footer ?? {}) as NonNullable<typeof rawFooterData>;
+    const merged = { ...defaults, ...(rawFooterData ?? {}) };
+    if (Array.isArray(rawFooterData?.footerColumns) && rawFooterData.footerColumns.length) {
+      return merged;
+    }
+    const columns = (["quickLinks", "ourCauses", "usefullinks"] as const).map((key) => {
+      const group = merged[key];
+      return {
+        title: group?.title || key,
+        links: Array.isArray(group?.links)
+          ? group.links.map((link) => ({
+              label: link.label || "",
+              href: link.href || "",
+            }))
+          : [],
+      };
+    });
+    return { ...merged, footerColumns: columns };
+  })();
   const footerBackgroundType =
     activeFooterData?.footerBackgroundType ?? "solid";
   const footerSolidColor = activeFooterData?.footerBackgroundColor ?? "#0d1f2a";
@@ -4495,6 +4651,19 @@ export default function EditSectionModal({
       return 0;
     },
   );
+  const headerLayoutChoices: LayoutOption[] =
+    activeSectionType === "Header" &&
+    activeLayoutId &&
+    !layoutOptions.some((layout) => layout.id === activeLayoutId)
+      ? [
+          {
+            id: activeLayoutId,
+            name:
+              activeLayoutId === "PetHeader1" ? "Current header" : activeLayoutId,
+          },
+          ...layoutOptions,
+        ]
+      : layoutOptions;
   const visibleLayoutOptions =
     activeSectionType === "Gallery" && layoutOptions.length > 4
       ? Array.from(
@@ -4529,16 +4698,59 @@ export default function EditSectionModal({
     event.currentTarget.setPointerCapture(event.pointerId);
     event.preventDefault();
 
-    setDragStart({
+    const nextDrag = {
       pointerId: event.pointerId,
       pointerX: event.clientX,
       pointerY: event.clientY,
       modalX: modalPosition.x,
       modalY: modalPosition.y,
+    };
+    dragRef.current = nextDrag;
+    setDragStart(nextDrag);
+  };
+
+  const handleModalPointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    const drag = dragRef.current;
+    if (!drag || event.pointerId !== drag.pointerId) return;
+
+    const frame =
+      document.querySelector<HTMLElement>("[data-editor-live-surface]")?.getBoundingClientRect() ||
+      document.querySelector<HTMLElement>("[data-template-scroll]")?.getBoundingClientRect();
+    const modalWidth = event.currentTarget.offsetWidth;
+    const modalHeight = event.currentTarget.offsetHeight;
+    const originLeft = window.innerWidth / 2 - modalWidth / 2;
+    const originTop = window.innerHeight * 0.08;
+    const bounds = frame || {
+      left: 12,
+      top: 12,
+      right: window.innerWidth - 12,
+      bottom: window.innerHeight - 12,
+    };
+    const grip = 96;
+    const minX = Math.min(
+      bounds.left - originLeft - modalWidth + grip,
+      bounds.right - originLeft - grip,
+    );
+    const maxX = Math.max(
+      bounds.left - originLeft - modalWidth + grip,
+      bounds.right - originLeft - grip,
+    );
+    const minY = Math.min(
+      bounds.top - originTop - modalHeight + grip,
+      bounds.bottom - originTop - grip,
+    );
+    const maxY = Math.max(
+      bounds.top - originTop - modalHeight + grip,
+      bounds.bottom - originTop - grip,
+    );
+    setModalPosition({
+      x: Math.max(minX, Math.min(maxX, drag.modalX + event.clientX - drag.pointerX)),
+      y: Math.max(minY, Math.min(maxY, drag.modalY + event.clientY - drag.pointerY)),
     });
   };
 
   const handleModalPointerUp = () => {
+    dragRef.current = null;
     setDragStart(null);
   };
 
@@ -4548,15 +4760,41 @@ export default function EditSectionModal({
     const handleWindowPointerMove = (event: globalThis.PointerEvent) => {
       if (event.pointerId !== dragStart.pointerId) return;
 
+      const frame =
+        document.querySelector<HTMLElement>("[data-template-scroll]")?.getBoundingClientRect() ||
+        document.querySelector<HTMLElement>("[data-editor-live-surface]")?.getBoundingClientRect();
+      const modalWidth = Math.min(window.innerWidth - 24, 980);
+      const modalHeight = Math.min(window.innerHeight * 0.84, 680);
+      const originLeft = window.innerWidth / 2 - modalWidth / 2;
+      const originTop = window.innerHeight * 0.08;
+      const bounds = frame || {
+        left: 12,
+        top: 12,
+        right: window.innerWidth - 12,
+        bottom: window.innerHeight - 12,
+      };
+      const grip = 96;
+      const minX = Math.min(
+        bounds.left - originLeft - modalWidth + grip,
+        bounds.right - originLeft - grip,
+      );
+      const maxX = Math.max(
+        bounds.left - originLeft - modalWidth + grip,
+        bounds.right - originLeft - grip,
+      );
+      const minY = Math.min(
+        bounds.top - originTop - modalHeight + grip,
+        bounds.bottom - originTop - grip,
+      );
+      const maxY = Math.max(
+        bounds.top - originTop - modalHeight + grip,
+        bounds.bottom - originTop - grip,
+      );
+      const nextX = dragStart.modalX + event.clientX - dragStart.pointerX;
+      const nextY = dragStart.modalY + event.clientY - dragStart.pointerY;
       setModalPosition({
-        x: Math.max(
-          -320,
-          Math.min(320, dragStart.modalX + event.clientX - dragStart.pointerX),
-        ),
-        y: Math.max(
-          -120,
-          Math.min(220, dragStart.modalY + event.clientY - dragStart.pointerY),
-        ),
+        x: Math.max(minX, Math.min(maxX, nextX)),
+        y: Math.max(minY, Math.min(maxY, nextY)),
       });
     };
     const handleWindowPointerEnd = (event: globalThis.PointerEvent) => {
@@ -4771,6 +5009,26 @@ export default function EditSectionModal({
         | undefined) ??
       (fallbackVariantData as Record<string, unknown> | undefined) ??
       {};
+
+    if (activeVariant.startsWith("Pet") && Array.isArray(newData.footerColumns)) {
+      const columns = newData.footerColumns as {
+        title?: string;
+        links?: { label?: string; href?: string }[];
+      }[];
+      (["quickLinks", "ourCauses", "usefullinks"] as const).forEach((key, index) => {
+        const column = columns[index];
+        if (!column) return;
+        const previous = (baseFooterData as Record<string, unknown>)[key];
+        newData[key] = {
+          ...(previous && typeof previous === "object" ? previous : {}),
+          title: column.title || "",
+          links: (column.links ?? []).map((link) => ({
+            label: link.label || "",
+            href: link.href || "",
+          })),
+        };
+      });
+    }
 
     if (Array.isArray(newData.footerColumns)) {
       try {
@@ -5419,7 +5677,19 @@ export default function EditSectionModal({
   };
 
   const updateHeaderLogo = (logo: string) => {
-    updateActiveHeaderData({ logo });
+    const currentLogo = activeHeaderData?.logo as unknown;
+    const objectSrc =
+      currentLogo &&
+      typeof currentLogo === "object" &&
+      typeof (currentLogo as { src?: unknown }).src === "string"
+        ? (currentLogo as { src: string }).src
+        : "";
+    updateActiveHeaderData({
+      logo,
+      ...(objectSrc && !activeHeaderData?.logoImage
+        ? { logoImage: objectSrc }
+        : {}),
+    });
   };
 
   const updateHeaderLogoImage = (event: ChangeEvent<HTMLInputElement>) => {
@@ -6082,14 +6352,18 @@ export default function EditSectionModal({
         aria-hidden="true"
       />
       <div
-        className={`pointer-events-auto fixed z-10 h-[min(84vh,680px)] w-[min(calc(100vw-1.5rem),980px)] cursor-grab flex-col overflow-hidden rounded-[28px] border border-white/70 bg-[#f4f6f9] shadow-[0_40px_100px_rgba(8,19,47,0.38)] animate-editor-pop active:cursor-grabbing ${generationText ? "hidden" : "flex"
+        className={`pointer-events-auto fixed z-10 h-[min(84vh,680px)] w-[min(calc(100vw-1.5rem),980px)] cursor-grab flex-col overflow-hidden rounded-[28px] border border-white/70 bg-[#f4f6f9] shadow-[0_40px_100px_rgba(8,19,47,0.38)] active:cursor-grabbing ${generationText ? "hidden" : "flex"
           }`}
         style={{
-          left: `calc((100vw - min(calc(100vw - 1.5rem), 980px)) / 2 + ${modalPosition.x}px)`,
-          top: `calc(8vh + ${modalPosition.y}px)`,
+          left: "50%",
+          top: "8vh",
+          transform: `translate(calc(-50% + ${modalPosition.x}px), ${modalPosition.y}px)`,
+          animation: "none",
+          transition: "none",
           touchAction: dragStart ? "none" : "auto",
         }}
         onPointerDown={handleModalPointerDown}
+        onPointerMove={handleModalPointerMove}
       >
         <div
           className={`relative flex items-center justify-between gap-3 border-b border-slate-200/80 bg-white px-4 py-2.5 sm:px-5 ${dragStart ? "cursor-grabbing" : "cursor-grab"
@@ -6643,16 +6917,47 @@ export default function EditSectionModal({
                       Logo
                     </h4>
 
+                    <label className={contentFieldLabelClass}>Show</label>
+                    <select
+                      value={resolveHeaderLogoDisplay(activeHeaderData)}
+                      onChange={(event) =>
+                        updateActiveHeaderData(
+                          {
+                            logoDisplay: event.target.value as
+                              | "text"
+                              | "image"
+                              | "both",
+                          },
+                          { syncPageLinks: false },
+                        )
+                      }
+                      className={contentFieldInputClass}
+                      aria-label="Logo display"
+                    >
+                      <option value="text">Text</option>
+                      <option value="image">Image</option>
+                      <option value="both">Text with Image</option>
+                    </select>
+
+                    {resolveHeaderLogoDisplay(activeHeaderData) !== "image" ? (
+                      <>
                     <label className="block text-[10px] font-semibold uppercase tracking-[0.06em] text-slate-500">
                       Logo Text
                     </label>
                     <input
-                      value={activeHeaderData?.logo ?? ""}
+                      value={
+                        typeof activeHeaderData?.logo === "string"
+                          ? activeHeaderData.logo
+                          : ""
+                      }
                       onChange={(event) => updateHeaderLogo(event.target.value)}
                       className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2.5 text-xs text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#315ff4] focus:ring-2 focus:ring-[#315ff4]/15"
                       placeholder="Your brand name…"
                     />
+                      </>
+                    ) : null}
 
+                    {resolveHeaderLogoDisplay(activeHeaderData) !== "text" ? (
                     <div className="space-y-2">
                       <span className={contentFieldLabelClass}>
                         Logo image
@@ -6699,6 +7004,7 @@ export default function EditSectionModal({
                         placeholder="Describe logo for accessibility…"
                       />
                     </div>
+                    ) : null}
                   </div>
 
                   <div className={`${contentFieldCardClass} space-y-4`}>
@@ -6900,7 +7206,7 @@ export default function EditSectionModal({
             {activeSectionType === "Header" &&
               activeTab === "Header Layout" && (
                 <div className="space-y-4">
-                  {layoutOptions.map((layout) => {
+                  {headerLayoutChoices.map((layout) => {
                     const isActive = currentSection?.variant === layout.id;
                     const liveHeaderContent = activeHeaderData
                       ? (activeHeaderData as Record<string, unknown>)
@@ -6945,6 +7251,20 @@ export default function EditSectionModal({
                                   <div className="h-1.5 w-9 rounded bg-current" />
                                 </div>
                                 <div className="h-5 w-12 rounded-md bg-blue-600" />
+                              </div>
+                            </div>
+                          )}
+
+                          {layout.id === "PetHeader1" && (
+                            <div className="flex h-full items-center bg-[#f6efe8] px-3">
+                              <div className="flex h-9 w-full items-center justify-between rounded-full bg-white px-3 shadow-sm">
+                                <div className="h-3 w-8 rounded bg-[#F37021]" />
+                                <div className="flex gap-2">
+                                  <div className="h-1.5 w-6 rounded bg-[#2C1810]" />
+                                  <div className="h-1.5 w-6 rounded bg-[#2C1810]" />
+                                  <div className="h-1.5 w-6 rounded bg-[#2C1810]" />
+                                </div>
+                                <div className="h-4 w-12 rounded-full bg-[#2C1810]" />
                               </div>
                             </div>
                           )}
@@ -8551,6 +8871,23 @@ export default function EditSectionModal({
                   "CookiePolicy",
                   "RefundPolicy",
                   "TestimonialPage",
+                ].includes(activeSectionType)) ||
+              (activeVariant.startsWith("Pet") &&
+                activeTab.endsWith("Content") &&
+                ![
+                  "Header",
+                  "Footer",
+                  "Topbar",
+                  "Banner",
+                  "About",
+                  "Service",
+                  "WhyChooseUs",
+                  "HowItWorks",
+                  "HowWeWork",
+                  "Gallery",
+                  "FAQ",
+                  "Testimonial",
+                  "Blog",
                 ].includes(activeSectionType))) &&
               activeTab.endsWith("Content") && (
                 <div className="space-y-5">
@@ -9060,6 +9397,7 @@ export default function EditSectionModal({
                         onImagePickerRequest={openGenericImagePicker}
                         onOpenHrefPicker={openGenericHrefPicker}
                         availablePageNames={availablePageNames}
+                        contentVariant={activeVariant}
                       />
                     </div>
                   ))}

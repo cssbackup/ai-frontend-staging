@@ -2,11 +2,11 @@
 
 import type { SectionProps } from "../../../types/section";
 import { useOptionalPreview } from "../../context/PreviewContext";
-import { editorSlug } from "../pet/editorSlug";
-import PetFrame from "../pet/PetFrame";
-import { mergePetSite, PetSiteProvider, usePetSite } from "../pet/petSite";
-import SubBanner from "../pet/views/ui/subbanner";
-import LocationDetails from "../pet/views/layout/locationdetails/details";
+import { editorSlug } from "../data/pet/editorSlug";
+import PetFrame from "../data/pet/PetFrame";
+import { mergePetSite, PetSiteProvider, usePetSite } from "../data/pet/petSite";
+import SubBanner from "../banner/PetSubBanner";
+import LocationDetails from "./PetLocationDetails";
 
 function PetDetailBody() {
   const site = usePetSite();

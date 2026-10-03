@@ -163,6 +163,7 @@ import PlumbingRefundPolicy1 from "../components/sections/refund-policy/Plumbing
 import PetHeader1 from "../components/sections/header/PetHeader1";
 import PetFooter1 from "../components/sections/footer/PetFooter1";
 import PetBanner1 from "../components/sections/banner/PetBanner1";
+import PetSubBanner1 from "../components/sections/banner/PetSubBanner1";
 import PetAbout1 from "../components/sections/about/PetAbout1";
 // import PetServiceArea1 from "../components/sections/service-area/PetServiceArea1";
 import PetService1 from "../components/sections/service/PetService1";
@@ -508,6 +509,7 @@ export const sectionRegistry: Record<string, ComponentType<SectionProps>> = {
   PetHeader1,
   PetFooter1,
   PetBanner1,
+  PetSubBanner1,
   PetAbout1,
   // PetServiceArea1,
   PetService1,

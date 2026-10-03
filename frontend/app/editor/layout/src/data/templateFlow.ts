@@ -1819,6 +1819,7 @@ export const resolveTemplateSectionVariant = (
   ) {
     return expected;
   }
+  if (expected.startsWith("Pet")) return expected;
   return current;
 };
 
@@ -2350,7 +2351,7 @@ function pageVariantsFor(
     if (pageBodyType === "CareerPage") {
       next.CareerJobs = source.CareerJobs || "CareerJobs-5";
     }
-    if (pageBodyType === "AboutPage") {
+    if (pageBodyType === "AboutPage" && !String(pageBodyKey || "").startsWith("Pet")) {
       next.Stats = source.Stats || "Stats-5";
       next.CTA = source.CTA || "CTA-5";
     }
@@ -2766,7 +2767,10 @@ export const buildSelectedConfig = (
           page: page.id,
         });
       }
-      if (page.sectionType === "AboutPage") {
+      if (
+        page.sectionType === "AboutPage" &&
+        !String(builderTemplate.sectionVariants.AboutPage || "").startsWith("Pet")
+      ) {
         const statsVariant =
           builderTemplate.sectionVariants.Stats || "Stats-5";
         const statsSection = makeSection("Stats", statsVariant);

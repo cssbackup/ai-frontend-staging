@@ -2920,19 +2920,19 @@ export default function EditableSection({
                 window.innerHeight - 48,
               ),
               left:
-                sectionToolbarAlign === "left"
-                  ? collapsedChromeToolbar.left + 12
-                  : sectionToolbarAlign === "right"
-                    ? collapsedChromeToolbar.right - 12
-                    : collapsedChromeToolbar.left +
-                      (collapsedChromeToolbar.right - collapsedChromeToolbar.left) /
-                        2,
-              transform:
-                sectionToolbarAlign === "left"
+                sectionToolbarAlign === "right"
                   ? undefined
-                  : sectionToolbarAlign === "right"
-                    ? "translateX(-100%)"
-                    : "translateX(-50%)",
+                  : sectionToolbarAlign === "left"
+                  ? collapsedChromeToolbar.left + 12
+                  : collapsedChromeToolbar.left +
+                    (collapsedChromeToolbar.right - collapsedChromeToolbar.left) /
+                      2,
+              right:
+                sectionToolbarAlign === "right"
+                  ? Math.max(12, window.innerWidth - collapsedChromeToolbar.right + 12)
+                  : undefined,
+              transform:
+                sectionToolbarAlign === "center" ? "translateX(-50%)" : undefined,
             }}
           >
             <div className="pointer-events-auto flex h-10 max-w-[min(96vw,720px)] items-center gap-2 rounded-full border border-slate-300 bg-white px-3 py-1 shadow-lg">
@@ -2982,17 +2982,17 @@ export default function EditableSection({
             </div>
           ) : (
             <div
-              className={`absolute left-0 right-0 flex -translate-y-1/2 py-0 ${
-                sectionToolbarAlign === "left"
-                  ? "justify-start pl-3"
-                  : sectionToolbarAlign === "right"
-                    ? "justify-end pr-3"
-                    : "justify-center"
-              }`}
+              className="absolute left-0 right-0 flex w-full -translate-y-1/2 py-0"
               style={{ top: shouldCenterToolbar ? "50%" : toolbarY }}
             >
               <div
-                className="pointer-events-auto flex h-10 max-w-[min(96vw,720px)] items-center gap-2 rounded-full border border-slate-300 bg-white px-3 py-1 shadow-lg"
+                className={`pointer-events-auto flex h-10 max-w-[min(96vw,720px)] items-center gap-2 rounded-full border border-slate-300 bg-white px-3 py-1 shadow-lg ${
+                  sectionToolbarAlign === "left"
+                    ? "ml-3 mr-auto"
+                    : sectionToolbarAlign === "right"
+                      ? "ml-auto mr-3"
+                      : "mx-auto"
+                }`}
               >
                 {editDeleteControls}
               </div>
